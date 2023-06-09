@@ -1,10 +1,3 @@
-//
-//  JSONTests.swift
-//  
-//
-//  Created by Leif on 6/9/23.
-//
-
 import XCTest
 @testable import Cache
 

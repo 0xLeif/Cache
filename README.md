@@ -84,6 +84,29 @@ You can also just set the value to `nil` using the subscripts
 cache[.text] = nil
 ```
 
+### ExpiringCache
+
+The `ExpiringCache` class is a cache that retains and returns objects for a specific duration set by the `ExpirationDuration` enumeration. Objects stored in the cache are automatically removed when their expiration duration has passed.
+
+#### Usage
+
+```swift
+// Create an instance of the cache with a duration of 5 minutes
+let cache = ExpiringCache<String, Int>(duration: .minutes(5))
+
+// Store a value in the cache with a key
+cache["Answer"] = 42
+
+// Retrieve a value from the cache using its key
+if let answer = cache["Answer"] {
+    print("The answer is \(answer)")
+}
+```
+
+#### Expiration Duration
+
+The expiration duration of the cache can be set with the `ExpirationDuration` enumeration, which has three cases: `seconds`, `minutes`, and `hours`. Each case takes a single `UInt` argument to represent the duration of that time unit.
+
 ### Advanced Usage
 
 You can use `Cache` as an observed object:
