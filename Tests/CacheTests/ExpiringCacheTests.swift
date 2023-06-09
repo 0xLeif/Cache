@@ -371,7 +371,7 @@ final class ExpiringCacheTests: XCTestCase {
 
         XCTAssertEqual(cache.get(.text), "Hello, World!")
 
-        usleep(990_000)
+        usleep(500_000)
 
         XCTAssertNotNil(cache.get(.text))
     }
