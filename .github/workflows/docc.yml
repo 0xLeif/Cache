@@ -1,0 +1,40 @@
+name: docc
+'on':
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  pages:
+    environment:
+      name: github-pages
+      url: '${{ steps.deployment.outputs.page_url }}'
+    runs-on: macos-12
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v3
+      - name: docbuild
+        run: >
+          xcodebuild docbuild -scheme Cache \
+            -derivedDataPath /tmp/docbuild \
+            -destination 'generic/platform=iOS';
+          $(xcrun --find docc) process-archive \
+            transform-for-static-hosting /tmp/docbuild/Build/Products/Debug-iphoneos/Cache.doccarchive \
+            --hosting-base-path Cache \
+            --output-path docs;
+          echo "<script>window.location.href +=
+          \"/documentation/cache\"</script>" > docs/index.html;
+      - name: artifacts
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: docs
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@v1
+
