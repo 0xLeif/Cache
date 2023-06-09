@@ -1,4 +1,4 @@
-import Foundation.FoundationErrors
+import Foundation
 
 /// `Error` that reports the expected type for a value
 public struct InvalidTypeError<ExpectedType, ActualType>: LocalizedError {

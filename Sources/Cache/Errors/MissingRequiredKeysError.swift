@@ -1,4 +1,4 @@
-import Foundation.FoundationErrors
+import Foundation
 
 /// `Error` that reports the required keys
 public struct MissingRequiredKeysError<Key: Hashable>: LocalizedError {
