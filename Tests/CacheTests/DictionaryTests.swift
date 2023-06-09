@@ -1,10 +1,3 @@
-//
-//  DictionaryTests.swift
-//  
-//
-//  Created by Leif on 6/9/23.
-//
-
 import XCTest
 
 final class DictionaryTests: XCTestCase {
