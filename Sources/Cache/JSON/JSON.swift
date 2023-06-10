@@ -59,26 +59,26 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         return jsonArray.compactMap { jsonObject in
             guard let jsonDictionary = jsonObject as? [String: Any] else { return nil }
 
-            var initialValues: [Key: Any] = [:]
+            return JSON(
+                initialValues: jsonDictionary.compactMapDictionary { jsonKey, jsonValue in
+                    guard let key = Key(rawValue: jsonKey) else { return nil }
 
-            jsonDictionary.forEach { jsonKey, jsonValue in
-                guard let key = Key(rawValue: jsonKey) else { return }
-
-                initialValues[key] = jsonValue
-            }
-
-            return JSON(initialValues: initialValues)
+                    return (key, jsonValue)
+                }
+            )
         }
     }
 
-    /// Returns JSON data.
-    ///
-    /// - Throws: Errors are from `JSONSerialization.data(withJSONObject:)`
+    /**
+     Returns a `Data` object representing the JSON-encoded key-value pairs transformed into a dictionary where their keys are the raw values of their associated enum cases.
+
+     - Throws: `JSONSerialization.data(withJSONObject:)` errors, if any.
+
+     - Returns: A `Data` object that encodes the key-value pairs.
+     */
     public func data() throws -> Data {
         try JSONSerialization.data(
-            withJSONObject: allValues.mapDictionary { key, value in
-                (key.rawValue, value)
-            }
+            withJSONObject: allValues.mapKeys(\.rawValue)
         )
     }
 
@@ -101,12 +101,12 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
             jsonDictionary = JSON<JSONKey>(data: data)
         } else if let dictionary = value as? [String: Any] {
             jsonDictionary = JSON<JSONKey>(
-                initialValues: dictionary.compactMapDictionary { key, value in
+                initialValues: dictionary.compactMapKeys { key in
                     guard let key = JSONKey(rawValue: key) else {
                         return nil
                     }
 
-                    return (key, value)
+                    return key
                 }
             )
         } else if let dictionary = value as? [JSONKey: Any] {
@@ -136,15 +136,13 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         if let data = value as? Data {
             jsonArray = JSON<JSONKey>.array(data: data)
         } else if let array = value as? [[String: Any]] {
-            var values: [JSON<JSONKey>] = []
+            jsonArray = array.compactMap { json in
+                guard
+                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
+                else { return nil }
 
-            array.forEach { json in
-                guard let jsonData = try? JSONSerialization.data(withJSONObject: json) else { return }
-
-                values.append(JSON<JSONKey>(data: jsonData))
+                return JSON<JSONKey>(data: jsonData)
             }
-
-            jsonArray = values
         } else if let array = value as? [[JSONKey: Any]] {
             jsonArray = array.map { json in
                 JSON<JSONKey>(initialValues: json)
