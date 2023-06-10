@@ -47,17 +47,6 @@ open class Cache<Key: Hashable, Value>: Cacheable, ObservableObject {
     }
 
     /**
-     Gets a value from the cache for a given key.
-
-     - Parameters:
-        - key: The key to retrieve the value for.
-     - Returns: The value stored in cache for the given key, or `nil` if it doesn't exist.
-     */
-    open func get(_ key: Key) -> Value? {
-        get(key, as: Value.self)
-    }
-
-    /**
      Resolves a value from the cache for a given key.
 
      - Parameters:
@@ -79,18 +68,6 @@ open class Cache<Key: Hashable, Value>: Cacheable, ObservableObject {
         }
 
         return value
-    }
-
-    /**
-     Resolves a value from the cache for a given key.
-
-     - Parameters:
-        - key: The key to retrieve the value for.
-     - Returns: The value stored in cache for the given key.
-     - Throws: `MissingRequiredKeysError` if the key is missing, or `InvalidTypeError` if the value type is not compatible with the expected type.
-     */
-    open func resolve(_ key: Key) throws -> Value {
-        try resolve(key, as: Value.self)
     }
 
     /**
