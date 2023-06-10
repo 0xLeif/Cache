@@ -24,6 +24,13 @@ final class JSONTests: XCTestCase {
         XCTAssertEqual(json.get(.text), "Hello, World!")
         XCTAssertEqual(json.get(.count), 27)
         XCTAssertEqual(json.get(.isError), false)
+
+        let data = try json.data()
+        let loadedJSON: JSON<Key> = JSON(data: data)
+
+        XCTAssertEqual(loadedJSON.get(.text, as: String.self), json.get(.text))
+        XCTAssertEqual(loadedJSON.get(.count, as: Int.self), json.get(.count))
+        XCTAssertEqual(loadedJSON.get(.isError, as: Bool.self), json.get(.isError))
     }
 
     func testInitArray() throws {
