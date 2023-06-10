@@ -160,4 +160,40 @@ extension Dictionary: Cacheable {
     ) -> [Key: Item] {
         compactMapValues { $0 as? Item }
     }
+
+    /**
+     Returns a new dictionary containing the keys and values resulting from applying the given transformation to each element in the original dictionary.
+
+     - Parameters:
+       - transform: A closure that takes a key-value pair from the dictionary as its argument and returns a tuple containing a new key and a new value. The returned tuple must have two elements of the same type as the expected output for this method.
+
+     - Returns: A new dictionary containing the transformed keys and values.
+     */
+    public func mapDictionary<NewKey: Hashable, NewValue>(
+        _ transform: (Key, Value) -> (NewKey, NewValue)
+    ) -> [NewKey: NewValue] {
+        compactMapDictionary(transform)
+    }
+
+    /**
+     Returns a new dictionary containing only the key-value pairs that have non-nil values resulting from applying the given transformation to each element in the original dictionary.
+
+     - Parameters:
+       - transform: A closure that takes a key-value pair from the dictionary as its argument and returns an optional tuple containing a new key and a new value. Each non-nil key-value pair will be included in the returned dictionary.
+
+     - Returns: A new dictionary containing the non-nil transformed keys and values.
+     */
+    public func compactMapDictionary<NewKey: Hashable, NewValue>(
+        _ transform: (Key, Value) -> (NewKey, NewValue)?
+    ) -> [NewKey: NewValue] {
+        var dictionary: [NewKey: NewValue] = [:]
+
+        for (key, value) in self {
+            if let (newKey, newValue) = transform(key, value) {
+                dictionary[newKey] = newValue
+            }
+        }
+
+        return dictionary
+    }
 }

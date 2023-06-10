@@ -98,16 +98,14 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable {
         duration: ExpirationDuration,
         initialValues: [Key: Value] = [:]
     ) {
-        var initialExpirationValues: [Key: ExpiringValue] = [:]
-
-        initialValues.forEach { key, value in
-            initialExpirationValues[key] = ExpiringValue(
-                expriation: Date().addingTimeInterval(duration.timeInterval),
-                value: value
-            )
-        }
-
-        self.cache = Cache(initialValues: initialExpirationValues)
+        self.cache = Cache(
+            initialValues: initialValues.mapValues { value in
+                ExpiringValue(
+                    expriation: Date().addingTimeInterval(duration.timeInterval),
+                    value: value
+                )
+            }
+        )
         self.duration = duration
     }
 

@@ -75,14 +75,10 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
     ///
     /// - Throws: Errors are from `JSONSerialization.data(withJSONObject:)`
     public func data() throws -> Data {
-        var stringKeyedValues: [String: Any] = [:]
-
-        for (key, value) in allValues {
-            stringKeyedValues[key.rawValue] = value
-        }
-
-        return try JSONSerialization.data(
-            withJSONObject: stringKeyedValues
+        try JSONSerialization.data(
+            withJSONObject: allValues.mapDictionary { key, value in
+                (key.rawValue, value)
+            }
         )
     }
 
@@ -104,15 +100,15 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         if let data = value as? Data {
             jsonDictionary = JSON<JSONKey>(data: data)
         } else if let dictionary = value as? [String: Any] {
-            var initialValues: [JSONKey: Any] = [:]
+            jsonDictionary = JSON<JSONKey>(
+                initialValues: dictionary.compactMapDictionary { key, value in
+                    guard let key = JSONKey(rawValue: key) else {
+                        return nil
+                    }
 
-            dictionary.forEach { jsonKey, jsonValue in
-                guard let key = JSONKey(rawValue: jsonKey) else { return }
-
-                initialValues[key] = jsonValue
-            }
-
-            jsonDictionary = JSON<JSONKey>(initialValues: initialValues)
+                    return (key, value)
+                }
+            )
         } else if let dictionary = value as? [JSONKey: Any] {
             jsonDictionary = JSON<JSONKey>(initialValues: dictionary)
         } else if let json = value as? JSON<JSONKey> {
