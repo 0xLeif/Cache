@@ -71,6 +71,21 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         }
     }
 
+    /// Returns JSON data.
+    ///
+    /// - Throws: Errors are from `JSONSerialization.data(withJSONObject:)`
+    public func data() throws -> Data {
+        var stringKeyedValues: [String: Any] = [:]
+
+        for (key, value) in allValues {
+            stringKeyedValues[key.rawValue] = value
+        }
+
+        return try JSONSerialization.data(
+            withJSONObject: stringKeyedValues
+        )
+    }
+
     /**
     Retrieves a nested JSON object within the current object.
 
