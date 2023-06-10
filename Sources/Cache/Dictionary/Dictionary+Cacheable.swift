@@ -2,7 +2,7 @@ extension Dictionary: Cacheable {
     /// Initializes the Dictionary instance with an optional dictionary of key-value pairs.
     ///
     /// - Parameter initialValues: the dictionary of key-value pairs (if any) to initialize the cache.
-    public init(initialValues: [Key : Value]) {
+    public init(initialValues: [Key: Value]) {
         self = initialValues
     }
 
@@ -170,9 +170,9 @@ extension Dictionary: Cacheable {
      - Returns: A new dictionary containing the transformed keys and values.
      */
     public func mapDictionary<NewKey: Hashable, NewValue>(
-        _ transform: (Key, Value) -> (NewKey, NewValue)
-    ) -> [NewKey: NewValue] {
-        compactMapDictionary(transform)
+        _ transform: @escaping (Key, Value) throws -> (NewKey, NewValue)
+    ) rethrows -> [NewKey: NewValue] {
+        try compactMapDictionary(transform)
     }
 
     /**
@@ -184,16 +184,48 @@ extension Dictionary: Cacheable {
      - Returns: A new dictionary containing the non-nil transformed keys and values.
      */
     public func compactMapDictionary<NewKey: Hashable, NewValue>(
-        _ transform: (Key, Value) -> (NewKey, NewValue)?
-    ) -> [NewKey: NewValue] {
+        _ transform: @escaping (Key, Value) throws -> (NewKey, NewValue)?
+    ) rethrows -> [NewKey: NewValue] {
         var dictionary: [NewKey: NewValue] = [:]
 
         for (key, value) in self {
-            if let (newKey, newValue) = transform(key, value) {
+            if let (newKey, newValue) = try transform(key, value) {
                 dictionary[newKey] = newValue
             }
         }
 
         return dictionary
+    }
+
+    /**
+     Returns a new dictionary whose keys consist of the keys in the original dictionary transformed by the given closure.
+
+     - Parameters:
+       - transform: A closure that takes a key from the dictionary as its argument and returns a new key. The returned key must be of the same type as the expected output for this method.
+
+     - Returns: A new dictionary containing the transformed keys and the original values.
+     */
+    public func mapKeys<NewKey: Hashable>(
+        _ transform: @escaping (Key) throws -> NewKey
+    ) rethrows -> [NewKey: Value] {
+        try compactMapKeys(transform)
+    }
+
+    /**
+     Returns a new dictionary whose keys consist of the non-nil results of transforming the keys in the original dictionary by the given closure.
+
+     - Parameters:
+       - transform: A closure that takes a key from the dictionary as its argument and returns an optional new key. Each non-nil key will be included in the returned dictionary. The returned key must be of the same type as the expected output for this method.
+
+     - Returns: A new dictionary containing the non-nil transformed keys and the original values.
+     */
+    public func compactMapKeys<NewKey: Hashable>(
+        _ transform: @escaping (Key) throws -> NewKey?
+    ) rethrows -> [NewKey: Value] {
+        try compactMapDictionary { key, value in
+            guard let newKey = try transform(key) else { return nil }
+
+            return (newKey, value)
+        }
     }
 }
