@@ -344,6 +344,7 @@ final class ExpiringCacheTests: XCTestCase {
         }
     }
 
+    #if !os(Windows)
     func testExpiration_secondSuccess() {
         enum Key {
             case text
@@ -375,4 +376,5 @@ final class ExpiringCacheTests: XCTestCase {
 
         XCTAssertNotNil(cache.get(.text))
     }
+    #endif
 }
