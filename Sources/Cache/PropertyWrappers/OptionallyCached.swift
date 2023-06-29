@@ -38,7 +38,7 @@
             cache.get(key, as: Value.self)
         }
         set {
-            guard let newValue else {
+            guard let newValue = newValue else {
                 return cache.remove(key)
             }
             
