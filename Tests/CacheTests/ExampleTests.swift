@@ -1,3 +1,4 @@
+#if canImport(SwiftUI)
 import SwiftUI
 import XCTest
 @testable import Cache
@@ -58,3 +59,4 @@ final class ExampleTests: XCTestCase {
         _ = ExampleView().body
     }
 }
+#endif
