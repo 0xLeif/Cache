@@ -46,9 +46,10 @@
         }
     }
     
+    #if !os(Windows)
     /**
      Initializes a new instance of the `OptionallyCached` property wrapper.
-     
+
      - Parameters:
      - key: The key associated with the value in the cache.
      - cache: The cache instance to retrieve the value from. The default is `Global.cache`.
@@ -60,4 +61,20 @@
         self.key = key
         self.cache = cache
     }
+    #else
+    /**
+     Initializes a new instance of the `OptionallyCached` property wrapper.
+
+     - Parameters:
+     - key: The key associated with the value in the cache.
+     - cache: The cache instance to retrieve the value from.
+     */
+    public init(
+        key: Key,
+        using cache: Cache<Key, Any>
+    ) {
+        self.key = key
+        self.cache = cache
+    }
+    #endif
 }

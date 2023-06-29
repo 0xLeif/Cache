@@ -32,9 +32,12 @@
         }
     }
     
+
+
+    #if !os(Windows)
     /**
      Initializes a new instance of the `Resolved` property wrapper.
-     
+
      - Parameters:
      - key: The key associated with the dependency in the cache.
      - cache: The `RequiredKeysCache` instance to resolve the dependency from. The default is `Global.dependencies`.
@@ -45,7 +48,25 @@
     ) {
         self.key = key
         self.cache = cache
-        
+
         _ = self.cache.requiredKeys.insert(key)
     }
+    #else
+    /**
+     Initializes a new instance of the `Resolved` property wrapper.
+
+     - Parameters:
+     - key: The key associated with the dependency in the cache.
+     - cache: The `RequiredKeysCache` instance to resolve the dependency from. The default is `Global.dependencies`.
+     */
+    public init(
+        key: Key,
+        using cache: RequiredKeysCache<Key, Any>
+    ) {
+        self.key = key
+        self.cache = cache
+
+        _ = self.cache.requiredKeys.insert(key)
+    }
+    #endif
 }
