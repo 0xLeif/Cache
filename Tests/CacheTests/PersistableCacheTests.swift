@@ -1,3 +1,4 @@
+#if !os(Linux) && !os(Windows)
 import XCTest
 @testable import Cache
 
@@ -117,3 +118,4 @@ final class PersistableCacheTests: XCTestCase {
         )
     }
 }
+#endif
