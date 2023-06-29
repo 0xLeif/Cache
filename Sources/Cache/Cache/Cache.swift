@@ -159,6 +159,6 @@ open class Cache<Key: Hashable, Value>: Cacheable {
     }
 }
 
-#if !os(Linux) || !os(Windows)
+#if !os(Linux) && !os(Windows)
 extension Cache: ObservableObject { }
 #endif
