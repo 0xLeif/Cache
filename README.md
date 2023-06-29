@@ -12,6 +12,7 @@ Cache is a Swift library for caching arbitrary data types in memory. It provides
 - Supports JSON serialization and deserialization
 - Flexible caching, allowing for multiple Cache objects with different configurations
 - Thread-safe implementation
+- Property Wrappers
 
 ## Installation
 
