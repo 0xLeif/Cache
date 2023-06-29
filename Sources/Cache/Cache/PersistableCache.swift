@@ -1,3 +1,4 @@
+#if !os(Linux) && !os(Windows)
 import Foundation
 
 /**
@@ -142,3 +143,4 @@ private extension URL {
         return appending(path: name)
     }
 }
+#endif

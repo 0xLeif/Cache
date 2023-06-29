@@ -12,7 +12,7 @@ extension ExpiringCache {
             get(key, as: Value.self)
         }
         set(newValue) {
-            guard let newValue else {
+            guard let newValue = newValue else {
                 return remove(key)
             }
 

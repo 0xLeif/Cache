@@ -13,13 +13,17 @@ import Foundation
  let age = cache.get("age") // age is now 100
  ```
  */
-open class Cache<Key: Hashable, Value>: Cacheable, ObservableObject {
+open class Cache<Key: Hashable, Value>: Cacheable {
 
     /// Lock to synchronize the access to the cache dictionary.
     fileprivate var lock: NSLock
 
+    #if os(Linux) || os(Windows)
+    fileprivate var cache: [Key: Value] = [:]
+    #else
     /// The actual cache dictionary of key-value pairs.
     @Published fileprivate var cache: [Key: Value] = [:]
+    #endif
 
     /**
      Initializes a new `Cache` instance with an optional dictionary of initial key-value pairs.
@@ -154,3 +158,7 @@ open class Cache<Key: Hashable, Value>: Cacheable, ObservableObject {
         return cache.values(ofType: Output.self)
     }
 }
+
+#if !os(Linux) && !os(Windows)
+extension Cache: ObservableObject { }
+#endif

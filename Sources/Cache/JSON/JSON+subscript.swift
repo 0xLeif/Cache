@@ -12,7 +12,7 @@ extension JSON {
             get(key, as: Any.self)
         }
         set(newValue) {
-            guard let newValue else {
+            guard let newValue = newValue else {
                 return remove(key)
             }
 

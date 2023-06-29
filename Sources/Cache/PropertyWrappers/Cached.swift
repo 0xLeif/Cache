@@ -42,6 +42,8 @@
         }
     }
 
+
+    #if !os(Windows)
     /**
     Initializes a new instance of the `Cached` property wrapper.
 
@@ -59,4 +61,23 @@
         self.cache = cache
         self.defaultValue = defaultValue
     }
+    #else
+    /**
+    Initializes a new instance of the `Cached` property wrapper.
+
+    - Parameters:
+       - key: The key associated with the value in the cache.
+       - cache: The cache instance to retrieve the value from.
+       - defaultValue: The default value to be used if the value is not present in the cache.
+    */
+    public init(
+        key: Key,
+        using cache: Cache<Key, Any>,
+        defaultValue: Value
+    ) {
+        self.key = key
+        self.cache = cache
+        self.defaultValue = defaultValue
+    }
+    #endif
 }
