@@ -1,5 +1,4 @@
-import Foundation
-
+#if !os(Windows)
 public class AnyCacheable: Cacheable {
     public typealias Key = AnyHashable
     public typealias Value = Any
@@ -151,3 +150,4 @@ public class AnyCacheable: Cacheable {
         }
     }
 }
+#endif

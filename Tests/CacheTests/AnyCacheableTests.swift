@@ -1,3 +1,4 @@
+#if !os(Windows)
 import XCTest
 @testable import Cache
 
@@ -232,3 +233,4 @@ final class AnyCacheableTests: XCTestCase {
         XCTAssertThrowsError(try cacheable.require(keys: [Key.text, Key.missingKey]))
     }
 }
+#endif
