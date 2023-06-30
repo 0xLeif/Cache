@@ -10,7 +10,7 @@ final class PropertyWrappersTests: XCTestCase {
 
             static let cache = ExpiringCache<Key, Any>(duration: .minutes(2))
 
-            @Cached(key: Key.value, using: cache, defaultValue: "no value")
+            @Cached(key: .value, using: cache, defaultValue: "no value")
             var someValue: String
         }
 
@@ -34,7 +34,7 @@ final class PropertyWrappersTests: XCTestCase {
 
             static let cache = Cache<Key, Any>()
 
-            @OptionallyCached(key: Key.value, using: cache)
+            @OptionallyCached(key: .value, using: cache)
             var someValue: String?
         }
 
@@ -64,7 +64,7 @@ final class PropertyWrappersTests: XCTestCase {
 
             static let cache = RequiredKeysCache<Key, Any>()
 
-            @Resolved(key: Key.value, using: cache)
+            @Resolved(key: .value, using: cache)
             var someValue: String
         }
 
