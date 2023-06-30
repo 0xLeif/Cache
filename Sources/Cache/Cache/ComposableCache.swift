@@ -1,3 +1,4 @@
+#if !os(Windows)
 public struct ComposableCache<Key: Hashable>: Cacheable {
     private let caches: [AnyCacheable]
 
@@ -95,3 +96,4 @@ public struct ComposableCache<Key: Hashable>: Cacheable {
         return [:]
     }
 }
+#endif

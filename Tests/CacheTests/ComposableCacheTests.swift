@@ -1,8 +1,8 @@
+#if !os(Windows)
 import XCTest
 @testable import Cache
 
 final class ComposableCacheTests: XCTestCase {
-    #if !os(Windows)
     func testComplexComposableCache() {
         enum Key {
             case a
@@ -65,7 +65,6 @@ final class ComposableCacheTests: XCTestCase {
         XCTAssertNil(expiringCache.get(.c))
         XCTAssertNil(expiringCache.get(.d))
     }
-    #endif
 
     func testAllValues() {
         enum Key {
@@ -347,3 +346,4 @@ final class ComposableCacheTests: XCTestCase {
         XCTAssertThrowsError(try cache.require(keys: [.text, .missingKey]))
     }
 }
+#endif
