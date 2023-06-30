@@ -25,13 +25,13 @@
  - Note: The `OptionallyCached` property wrapper relies on a cache instance that conforms to the `Cache` protocol, in order to retrieve and store the values efficiently.
  
  */
-@propertyWrapper public struct OptionallyCached<Key: Hashable, Value> {
+@propertyWrapper public struct OptionallyCached<Key: Hashable, Value, CacheSource: Cacheable> where CacheSource.Key == Key, CacheSource.Value == Any {
     /// The key associated with the value in the cache.
     public let key: Key
     
     /// The cache instance to retrieve the value from.
-    public let cache: Cache<Key, Any>
-    
+    public var cache: CacheSource
+
     /// The wrapped value that can be accessed and mutated by the property wrapper.
     public var wrappedValue: Value? {
         get {
@@ -45,23 +45,7 @@
             cache.set(value: newValue, forKey: key)
         }
     }
-    
-    #if !os(Windows)
-    /**
-     Initializes a new instance of the `OptionallyCached` property wrapper.
 
-     - Parameters:
-     - key: The key associated with the value in the cache.
-     - cache: The cache instance to retrieve the value from. The default is `Global.cache`.
-     */
-    public init(
-        key: Key,
-        using cache: Cache<Key, Any> = Global.cache
-    ) {
-        self.key = key
-        self.cache = cache
-    }
-    #else
     /**
      Initializes a new instance of the `OptionallyCached` property wrapper.
 
@@ -71,10 +55,22 @@
      */
     public init(
         key: Key,
-        using cache: Cache<Key, Any>
+        using cache: CacheSource
     ) {
         self.key = key
         self.cache = cache
     }
-    #endif
+
+    /**
+     Initializes a new instance of the `OptionallyCached` property wrapper using the`Global.cache`
+
+     - Parameters:
+     - key: The key associated with the value in the cache.
+     */
+    public init(
+        key: Key
+    ) where CacheSource == Cache<AnyHashable, Any> {
+        self.key = key
+        self.cache = Global.cache
+    }
 }

@@ -65,14 +65,9 @@ public class RequiredKeysCache<Key: Hashable, Value>: Cache<Key, Value> {
     - Throws: A runtime error if the required key is not present in the cache or if the expected value type is incorrect.
     */
     public func resolve<Output>(requiredKey: Key, as: Output.Type = Output.self) -> Output {
-        guard
-            requiredKeys.contains(requiredKey)
-        else { fatalError("The key '\(requiredKey)' is not a Required Key.") }
-
-        guard
-            contains(requiredKey)
-        else { fatalError("Required Key Missing: '\(requiredKey)'") }
-
+        precondition(requiredKeys.contains(requiredKey), "The key '\(requiredKey)' is not a Required Key.")
+        precondition(contains(requiredKey), "Required Key Missing: '\(requiredKey)'")
+        
         do {
             return try resolve(requiredKey, as: Output.self)
         }
