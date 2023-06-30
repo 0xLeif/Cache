@@ -138,7 +138,11 @@ final class PropertyWrappersTests: XCTestCase {
                 case value
             }
 
+            #if os(Windows)
+            @Resolved(key: Key.value, using: Global.dependencies)
+            #else
             @Resolved(key: Key.value)
+            #endif
             var someValue: String
         }
 
