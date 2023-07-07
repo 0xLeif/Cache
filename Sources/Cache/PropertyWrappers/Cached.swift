@@ -22,12 +22,12 @@
 
  - Note: The `Cached` property wrapper relies on a cache instance that conforms to the `Cache` protocol, in order to retrieve and store the values efficiently.
  */
-@propertyWrapper public struct Cached<Key: Hashable, Value> {
+@propertyWrapper public struct Cached<Key: Hashable, Value, CacheSource: Cacheable> where CacheSource.Key == Key, CacheSource.Value == Any {
     /// The key associated with the value in the cache.
     public let key: Key
 
     /// The cache instance to retrieve the value from.
-    public let cache: Cache<Key, Any>
+    public var cache: CacheSource
 
     /// The default value to be used if the value is not present in the cache.
     public let defaultValue: Value
@@ -42,26 +42,6 @@
         }
     }
 
-
-    #if !os(Windows)
-    /**
-    Initializes a new instance of the `Cached` property wrapper.
-
-    - Parameters:
-       - key: The key associated with the value in the cache.
-       - cache: The cache instance to retrieve the value from. The default is `Global.cache`.
-       - defaultValue: The default value to be used if the value is not present in the cache.
-    */
-    public init(
-        key: Key,
-        using cache: Cache<Key, Any> = Global.cache,
-        defaultValue: Value
-    ) {
-        self.key = key
-        self.cache = cache
-        self.defaultValue = defaultValue
-    }
-    #else
     /**
     Initializes a new instance of the `Cached` property wrapper.
 
@@ -72,12 +52,27 @@
     */
     public init(
         key: Key,
-        using cache: Cache<Key, Any>,
+        using cache: CacheSource,
         defaultValue: Value
     ) {
         self.key = key
         self.cache = cache
         self.defaultValue = defaultValue
     }
-    #endif
+
+    /**
+    Initializes a new instance of the `Cached` property wrapper using the`Global.cache`.
+
+    - Parameters:
+       - key: The key associated with the value in the cache.
+       - defaultValue: The default value to be used if the value is not present in the cache.
+    */
+    public init(
+        key: Key,
+        defaultValue: Value
+    ) where CacheSource == Cache<AnyHashable, Any> {
+        self.key = key
+        self.cache = Global.cache
+        self.defaultValue = defaultValue
+    }
 }

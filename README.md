@@ -22,7 +22,7 @@ Add the following line to your `Package.swift` file in the dependencies array:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/0xLeif/Cache.git", from: "1.0.0")
+    .package(url: "https://github.com/0xLeif/Cache.git", from: "2.0.0")
 ]
 ```
 
