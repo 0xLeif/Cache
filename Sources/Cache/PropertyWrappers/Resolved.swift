@@ -31,8 +31,6 @@
             cache.set(value: newValue, forKey: key)
         }
     }
-    
-
 
     #if !os(Windows)
     /**
