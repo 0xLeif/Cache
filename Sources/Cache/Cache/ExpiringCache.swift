@@ -11,7 +11,7 @@ import Foundation
  */
 public class ExpiringCache<Key: Hashable, Value>: Cacheable {
     /// `Error` that reports expired values
-    public struct ExpiriedValueError<Key: Hashable>: LocalizedError {
+    public struct ExpiriedValueError: LocalizedError {
         /// Expired key
         public let key: Key
 
