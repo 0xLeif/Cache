@@ -9,9 +9,13 @@ import Foundation
  Here's an example of creating a cache, setting a value, and saving it to disk:
 
  ```swift
- let cache = PersistableCache<String, Double>()
+ enum Key: String {
+    case pi
+ }
 
- cache["pi"] = Double.pi
+ let cache = PersistableCache<Key, Double, Double>()
+
+ cache[.pi] = Double.pi
 
  do {
      try cache.save()
@@ -23,9 +27,9 @@ import Foundation
  You can also load a previously saved cache from disk:
 
  ```swift
- let cache = PersistableCache<String, Double>()
+ let cache = PersistableCache<Key, Double, Double>()
 
- let pi = cache["pi"] // pi == Double.pi
+ let pi = cache[.pi] // pi == Double.pi
  ```
 
  Note: You must make sure that the specified key type conforms to both `RawRepresentable` and `Hashable` protocols. The `RawValue` of `Key` must be a `String` type.
@@ -36,8 +40,8 @@ import Foundation
 
  Make sure to handle the errors appropriately.
  */
-open class PersistableCache<
-    Key: RawRepresentable & Hashable, Value
+public class PersistableCache<
+    Key: RawRepresentable & Hashable, Value, PersistedValue
 >: Cache<Key, Value> where Key.RawValue == String {
     private let lock: NSLock = NSLock()
 
@@ -47,25 +51,36 @@ open class PersistableCache<
     /// The URL of the persistable cache file's directory.
     public let url: URL
 
+    private let persistedValueMap: (Value) -> PersistedValue?
+    private let cachedValueMap: (PersistedValue) -> Value?
+
     /**
      Loads a persistable cache with a specified name and URL.
 
      - Parameters:
         - name: A string specifying the name of the cache.
         - url: A URL where the cache file directory will be or is stored.
+        - persistedValueMap: A closure that maps the cached value to the `PersistedValue`.
+        - cachedValueMap: A closure that maps the `PersistedValue` to`Value`.
      */
     public init(
         name: String,
-        url: URL
+        url: URL,
+        persistedValueMap: @escaping (Value) -> PersistedValue?,
+        cachedValueMap: @escaping (PersistedValue) -> Value?
     ) {
         self.name = name
         self.url = url
+        self.persistedValueMap = persistedValueMap
+        self.cachedValueMap = cachedValueMap
 
         var initialValues: [Key: Value] = [:]
 
         if let fileData = try? Data(contentsOf: url.fileURL(withName: name)) {
             let loadedJSON = JSON<Key>(data: fileData)
-            initialValues = loadedJSON.values(ofType: Value.self)
+            initialValues = loadedJSON
+                .values(ofType: PersistedValue.self)
+                .compactMapValues(cachedValueMap)
         }
 
         super.init(initialValues: initialValues)
@@ -78,10 +93,12 @@ open class PersistableCache<
      */
     public convenience init(
         name: String
-    ) {
+    ) where Value == PersistedValue {
         self.init(
             name: name,
-            url: URL.defaultFileURL
+            url: URL.defaultFileURL,
+            persistedValueMap: { $0 },
+            cachedValueMap: { $0 }
         )
     }
 
@@ -90,13 +107,40 @@ open class PersistableCache<
 
      - Parameter initialValues: A dictionary containing the initial cache contents.
      */
-    public required convenience init(initialValues: [Key: Value] = [:]) {
+    public required convenience init(initialValues: [Key: Value] = [:]) where Value == PersistedValue {
         self.init(name: "\(Self.self)")
 
         initialValues.forEach { key, value in
             set(value: value, forKey: key)
         }
     }
+
+    /**
+     Loads the persistable cache with the given initial values. The `name` is set to `"\(Self.self)"`.
+
+     - Parameters:
+        - initialValues: A dictionary containing the initial cache contents.
+        - persistedValueMap: A closure that maps the cached value to the `PersistedValue`.
+        - cachedValueMap: A closure that maps the `PersistedValue` to`Value`.
+     */
+    public convenience init(
+        initialValues: [Key: Value] = [:],
+        persistedValueMap: @escaping (Value) -> PersistedValue?,
+        cachedValueMap: @escaping (PersistedValue) -> Value?
+    ) {
+        self.init(
+            name: "\(Self.self)",
+            url: URL.defaultFileURL,
+            persistedValueMap: persistedValueMap,
+            cachedValueMap: cachedValueMap
+        )
+
+        initialValues.forEach { key, value in
+            set(value: value, forKey: key)
+        }
+    }
+
+    required init(initialValues: [Key: Value] = [:]) { fatalError("init(initialValues:) has not been implemented") }
 
     /**
      Saves the cache contents to disk.
@@ -107,7 +151,8 @@ open class PersistableCache<
      */
     public func save() throws {
         lock.lock()
-        let json = JSON<Key>(initialValues: allValues)
+        let persistedValues = allValues.compactMapValues(persistedValueMap)
+        let json = JSON<Key>(initialValues: persistedValues)
         let data = try json.data()
         try data.write(to: url.fileURL(withName: name))
         lock.unlock()

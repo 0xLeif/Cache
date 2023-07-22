@@ -117,9 +117,13 @@ To use `PersistableCache`, make sure that the specified key type conforms to bot
  Here's an example of creating a cache, setting a value, and saving it to disk:
 
  ```swift
- let cache = PersistableCache<String, Double>()
+ enum Key: String {
+     case pi
+ }
+ 
+ let cache = PersistableCache<Key, Double, Double>()
 
- cache["pi"] = Double.pi
+ cache[.pi] = Double.pi
 
  do {
      try cache.save()
@@ -131,9 +135,9 @@ To use `PersistableCache`, make sure that the specified key type conforms to bot
  You can also load a previously saved cache from disk:
 
  ```swift
- let cache = PersistableCache<String, Double>()
+ let cache = PersistableCache<Key, Double, Double>()
 
- let pi = cache["pi"] // pi == Double.pi
+ let pi = cache[.pi] // pi == Double.pi
  ```
  
  Remember that the `save()` function may throw errors if the encoder fails to serialize the cache to JSON or the disk write operation fails. Make sure to handle the errors appropriately.
