@@ -42,7 +42,7 @@ final class ComposableCacheTests: XCTestCase {
         XCTAssertNotNil(cache.get(.c))
         XCTAssertNotNil(cache.get(.d))
 
-        sleep(1)
+        sleep(2)
 
         // Check ComposableCache
 
