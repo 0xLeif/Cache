@@ -1,5 +1,10 @@
 #if !os(Linux) && !os(Windows)
+#if os(macOS)
+import AppKit
+#else
 import UIKit
+#endif
+
 import XCTest
 @testable import Cache
 
@@ -119,6 +124,48 @@ final class PersistableCacheTests: XCTestCase {
         )
     }
 
+    #if os(macOS)
+    func testImage() throws {
+        enum Key: String {
+            case image
+        }
+
+        let cache: PersistableCache<Key, NSImage, String> = PersistableCache(
+            initialValues: [
+                .image: try XCTUnwrap(NSImage(systemSymbolName: "circle", accessibilityDescription: nil))
+            ],
+            persistedValueMap: { image in
+                image.tiffRepresentation?.base64EncodedString()
+            },
+            cachedValueMap: { string in
+                guard let data = Data(base64Encoded: string) else {
+                    return nil
+                }
+
+                return NSImage(data: data)
+            }
+        )
+
+        XCTAssertEqual(cache.allValues.count, 1)
+
+        try cache.save()
+
+        let loadedCache: PersistableCache<Key, NSImage, String> = PersistableCache(
+            persistedValueMap: { image in
+                image.tiffRepresentation?.base64EncodedString()
+            },
+            cachedValueMap: { string in
+                guard let data = Data(base64Encoded: string) else {
+                    return nil
+                }
+
+                return NSImage(data: data)
+            }
+        )
+
+        XCTAssertEqual(loadedCache.allValues.count, 1)
+    }
+    #else
     func testImage() throws {
         enum Key: String {
             case image
@@ -126,7 +173,7 @@ final class PersistableCacheTests: XCTestCase {
 
         let cache: PersistableCache<Key, UIImage, String> = PersistableCache(
             initialValues: [
-                .image: UIImage(systemName: "circle")!
+                .image: try XCTUnwrap(UIImage(systemName: "circle"))
             ],
             persistedValueMap: { image in
                 image.pngData()?.base64EncodedString()
@@ -159,5 +206,6 @@ final class PersistableCacheTests: XCTestCase {
 
         XCTAssertEqual(loadedCache.allValues.count, 1)
     }
+    #endif
 }
 #endif
