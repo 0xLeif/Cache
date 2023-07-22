@@ -1,4 +1,5 @@
 #if !os(Linux) && !os(Windows)
+import UIKit
 import XCTest
 @testable import Cache
 
@@ -9,7 +10,7 @@ final class PersistableCacheTests: XCTestCase {
             case author
         }
 
-        let cache: PersistableCache<Key, String> = PersistableCache(
+        let cache: PersistableCache<Key, String, String> = PersistableCache(
             initialValues: [
                 .text: "Hello, World!"
             ]
@@ -24,13 +25,13 @@ final class PersistableCacheTests: XCTestCase {
             case text
         }
 
-        let failedLoadedCache: PersistableCache<SomeOtherKey, String> = PersistableCache()
+        let failedLoadedCache: PersistableCache<SomeOtherKey, String, String> = PersistableCache()
 
         XCTAssertEqual(failedLoadedCache.allValues.count, 0)
         XCTAssertEqual(failedLoadedCache.url, cache.url)
         XCTAssertNotEqual(failedLoadedCache.name, cache.name)
 
-        let loadedCache: PersistableCache<Key, String> = PersistableCache(
+        let loadedCache: PersistableCache<Key, String, String> = PersistableCache(
             initialValues: [
                 .author: "Leif"
             ]
@@ -40,11 +41,11 @@ final class PersistableCacheTests: XCTestCase {
 
         try loadedCache.delete()
 
-        let loadedDeletedCache: PersistableCache<Key, String> = PersistableCache()
+        let loadedDeletedCache: PersistableCache<Key, String, String> = PersistableCache()
 
         XCTAssertEqual(loadedDeletedCache.allValues.count, 0)
 
-        let expectedName = "PersistableCache<Key, String>"
+        let expectedName = "PersistableCache<Key, String, String>"
         let expectedURL = FileManager.default.urls(
             for: .documentDirectory,
             in: .userDomainMask
@@ -67,7 +68,7 @@ final class PersistableCacheTests: XCTestCase {
             case author
         }
 
-        let cache: PersistableCache<Key, String> = PersistableCache(name: "test")
+        let cache: PersistableCache<Key, String, String> = PersistableCache(name: "test")
 
         cache[.text] = "Hello, World!"
 
@@ -75,7 +76,7 @@ final class PersistableCacheTests: XCTestCase {
 
         try cache.save()
 
-        let loadedCache: PersistableCache<Key, String> = PersistableCache(name: "test")
+        let loadedCache: PersistableCache<Key, String, String> = PersistableCache(name: "test")
 
         loadedCache[.author] = "Leif"
 
@@ -87,7 +88,7 @@ final class PersistableCacheTests: XCTestCase {
             case text
         }
 
-        let otherKeyedLoadedCache: PersistableCache<SomeOtherKey, String> = PersistableCache(name: "test")
+        let otherKeyedLoadedCache: PersistableCache<SomeOtherKey, String, String> = PersistableCache(name: "test")
 
         XCTAssertEqual(otherKeyedLoadedCache.allValues.count, 1)
         XCTAssertEqual(otherKeyedLoadedCache.url, cache.url)
@@ -97,7 +98,7 @@ final class PersistableCacheTests: XCTestCase {
 
         try loadedCache.delete()
 
-        let loadedDeletedCache: PersistableCache<Key, String> = PersistableCache(name: "test")
+        let loadedDeletedCache: PersistableCache<Key, String, String> = PersistableCache(name: "test")
 
         XCTAssertEqual(loadedDeletedCache.allValues.count, 0)
 
@@ -116,6 +117,47 @@ final class PersistableCacheTests: XCTestCase {
             [cache.url, loadedCache.url, otherKeyedLoadedCache.url, loadedDeletedCache.url],
             [URL](repeating: expectedURL, count: 4)
         )
+    }
+
+    func testImage() throws {
+        enum Key: String {
+            case image
+        }
+
+        let cache: PersistableCache<Key, UIImage, String> = PersistableCache(
+            initialValues: [
+                .image: UIImage(systemName: "circle")!
+            ],
+            persistedValueMap: { image in
+                image.pngData()?.base64EncodedString()
+            },
+            cachedValueMap: { string in
+                guard let data = Data(base64Encoded: string) else {
+                    return nil
+                }
+
+                return UIImage(data: data)
+            }
+        )
+
+        XCTAssertEqual(cache.allValues.count, 1)
+
+        try cache.save()
+
+        let loadedCache: PersistableCache<Key, UIImage, String> = PersistableCache(
+            persistedValueMap: { image in
+                image.pngData()?.base64EncodedString()
+            },
+            cachedValueMap: { string in
+                guard let data = Data(base64Encoded: string) else {
+                    return nil
+                }
+
+                return UIImage(data: data)
+            }
+        )
+
+        XCTAssertEqual(loadedCache.allValues.count, 1)
     }
 }
 #endif
