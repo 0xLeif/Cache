@@ -1,4 +1,3 @@
-#if !os(Windows)
 class AnyCacheable: Cacheable {
     typealias Key = AnyHashable
     typealias Value = Any
@@ -150,4 +149,3 @@ class AnyCacheable: Cacheable {
         }
     }
 }
-#endif
