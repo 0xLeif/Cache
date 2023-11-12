@@ -1,7 +1,7 @@
 #if !os(Windows)
-public class AnyCacheable: Cacheable {
-    public typealias Key = AnyHashable
-    public typealias Value = Any
+class AnyCacheable: Cacheable {
+    typealias Key = AnyHashable
+    typealias Value = Any
 
     private var cache: any Cacheable
 
@@ -14,7 +14,7 @@ public class AnyCacheable: Cacheable {
     private var cacheRequireKey: ((AnyHashable) throws -> Void)!
     private var cacheValues: (() -> [AnyHashable: Any])!
 
-    public init<InnerCache: Cacheable>(_ cache: InnerCache) {
+    init<InnerCache: Cacheable>(_ cache: InnerCache) {
         self.cache = cache
 
         self.cacheGet = { key in
@@ -89,7 +89,7 @@ public class AnyCacheable: Cacheable {
         self.init(Cache(initialValues: initialValues))
     }
 
-    public func get<Output>(
+    func get<Output>(
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) -> Output? {
@@ -104,7 +104,7 @@ public class AnyCacheable: Cacheable {
         return output
     }
 
-    public func resolve<Output>(
+    func resolve<Output>(
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) throws -> Output {
@@ -120,31 +120,31 @@ public class AnyCacheable: Cacheable {
         return output
     }
 
-    public func set(value: Value, forKey key: AnyHashable) {
+    func set(value: Value, forKey key: AnyHashable) {
         cacheSet(value, key)
     }
 
-    public func remove(_ key: AnyHashable) {
+    func remove(_ key: AnyHashable) {
         cacheRemove(key)
     }
 
-    public func contains(_ key: AnyHashable) -> Bool {
+    func contains(_ key: AnyHashable) -> Bool {
         cacheContains(key)
     }
 
-    public func require(keys: Set<AnyHashable>) throws -> Self {
+    func require(keys: Set<AnyHashable>) throws -> Self {
         try cacheRequireKeys(keys)
 
         return self
     }
 
-    public func require(_ key: AnyHashable) throws -> Self {
+    func require(_ key: AnyHashable) throws -> Self {
         try cacheRequireKey(key)
 
         return self
     }
 
-    public func values<Output>(ofType: Output.Type) -> [AnyHashable: Output] {
+    func values<Output>(ofType: Output.Type) -> [AnyHashable: Output] {
         cacheValues().compactMapValues { value in
             value as? Output
         }
