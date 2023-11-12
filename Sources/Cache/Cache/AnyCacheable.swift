@@ -2,7 +2,7 @@ class AnyCacheable: Cacheable {
     typealias Key = AnyHashable
     typealias Value = Any
 
-    private var cache: any Cacheable
+    private var cache: Any
 
     private var cacheGet: ((AnyHashable) -> Any?)!
     private var cacheResolve: ((AnyHashable) throws -> Any)!
