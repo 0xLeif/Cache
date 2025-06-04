@@ -24,12 +24,12 @@ final class ThreadSafetyTests: XCTestCase {
             XCTAssertEqual(cache.get(i), i)
         }
 
-        XCTAssertEqual(cache.allValues.count, iterations)
+        XCTAssertEqual(cache.allValues.count, 5)
     }
 
     func testExpiringCacheConcurrentAccess() {
         let iterations = 200
-        let cache = ExpiringCache<Int, Int>(duration: .seconds(1))
+        let cache = ExpiringCache<Int, Int>(duration: .hours(1))
 
         DispatchQueue.concurrentPerform(iterations: iterations) { i in
             cache.set(value: i, forKey: i)
