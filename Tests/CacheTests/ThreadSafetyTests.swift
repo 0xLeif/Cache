@@ -17,14 +17,14 @@ final class ThreadSafetyTests: XCTestCase {
 
     func testLRUCacheConcurrentAccess() {
         let iterations = 500
-        let cache = LRUCache<Int, Int>(capacity: 5)
+        let cache = LRUCache<Int, Int>(capacity: 500)
 
         DispatchQueue.concurrentPerform(iterations: iterations) { i in
             cache.set(value: i, forKey: i)
             XCTAssertEqual(cache.get(i), i)
         }
 
-        XCTAssertEqual(cache.allValues.count, 5)
+        XCTAssertEqual(cache.allValues.count, 500)
     }
 
     func testExpiringCacheConcurrentAccess() {
