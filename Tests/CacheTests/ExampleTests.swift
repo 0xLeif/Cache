@@ -43,6 +43,7 @@ final class ExampleTests: XCTestCase {
         XCTAssertEqual(subclassObject.value, expectedValue)
     }
 
+    @MainActor
     func testObservedObjectExample() throws {
         struct ExampleView: View {
             enum Key {
