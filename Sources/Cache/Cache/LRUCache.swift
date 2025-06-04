@@ -11,7 +11,8 @@ Error Handling: The set(value:forKey:) function does not throw any error. Instea
 
 The `LRUCache` class is a subclass of the `Cache` class. You can use its `capacity` property to specify the maximum number of key-value pairs that the cache can hold.
 */
-public class LRUCache<Key: Hashable, Value>: Cache<Key, Value> {
+public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Sendable {
+    private let lock = NSRecursiveLock()
     private var keys: [Key]
 
     /// The maximum capacity of the cache.
@@ -46,6 +47,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value> {
     }
 
     public override func get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
+        lock.lock(); defer { lock.unlock() }
         guard let value = super.get(key, as: Output.self) else {
             return nil
         }
@@ -56,6 +58,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value> {
     }
 
     public override func set(value: Value, forKey key: Key) {
+        lock.lock(); defer { lock.unlock() }
         super.set(value: value, forKey: key)
 
         updateKeys(recentlyUsed: key)
@@ -63,6 +66,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value> {
     }
 
     public override func remove(_ key: Key) {
+        lock.lock(); defer { lock.unlock() }
         super.remove(key)
 
         if let index = keys.firstIndex(of: key) {
@@ -71,6 +75,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value> {
     }
 
     public override func contains(_ key: Key) -> Bool {
+        lock.lock(); defer { lock.unlock() }
         guard super.contains(key) else {
             return false
         }

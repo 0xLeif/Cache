@@ -1,4 +1,4 @@
 extension Global {
     /// The global cache for storing required dependencies.
-    public static var dependencies: RequiredKeysCache<AnyHashable, Any> = RequiredKeysCache()
+    public static let dependencies: RequiredKeysCache<AnyHashable, Any> = RequiredKeysCache()
 }

@@ -1,7 +1,7 @@
 import Foundation
 
 /// `Error` that reports the expected type for a value
-public struct InvalidTypeError<ExpectedType, ActualType>: LocalizedError {
+public struct InvalidTypeError<ExpectedType, ActualType>: LocalizedError, @unchecked Sendable {
     /// Expected type
     public let expectedType: ExpectedType.Type
 

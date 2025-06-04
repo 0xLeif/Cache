@@ -2,17 +2,18 @@ name: Ubuntu
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches: ["**"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: swift build -v
-    - name: Run tests
-      run: swift test -v
+      - uses: sersoft-gmbh/swifty-linux-action@v3
+        with:
+          release-version: 6.0.1
+      - uses: actions/checkout@v3
+      - name: Build for release
+        run: swift build -v -c release
+      - name: Test
+        run: swift test -v

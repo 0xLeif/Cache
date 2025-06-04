@@ -1,6 +1,7 @@
 import Foundation
 
-public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawValue == String {
+public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Sendable where Key.RawValue == String {
+    private let lock = NSLock()
     private var cache: [Key: Any]
 
     /**
@@ -94,6 +95,7 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         _ key: Key,
         keyed: JSONKey.Type = JSONKey.self
     ) -> JSON<JSONKey>? {
+        lock.lock(); defer { lock.unlock() }
         let value = cache[key]
         var jsonDictionary: JSON<JSONKey>?
 
@@ -130,6 +132,7 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         _ key: Key,
         keyed: JSONKey.Type = JSONKey.self
     ) -> [JSON<JSONKey>]? {
+        lock.lock(); defer { lock.unlock() }
         let value = cache[key]
         var jsonArray: [JSON<JSONKey>]?
 
@@ -163,7 +166,8 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
      - Returns: The value for the given key, or `nil` if the key doesn't exist or the cast fails.
      */
     public func get<Value>(_ key: Key, as: Value.Type = Value.self) -> Value? {
-        cache.get(key, as: Value.self)
+        lock.lock(); defer { lock.unlock() }
+        return cache.get(key, as: Value.self)
     }
 
     /**
@@ -176,7 +180,8 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
      - Throws: A `MissingRequiredKeysError` if the key is missing, or an `InvalidTypeError` if the value couldn't be casted to the specified type.
      */
     public func resolve<Value>(_ key: Key, as: Value.Type = Value.self) throws -> Value {
-        try cache.resolve(key, as: Value.self)
+        lock.lock(); defer { lock.unlock() }
+        return try cache.resolve(key, as: Value.self)
     }
 
     /**
@@ -187,7 +192,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         - forKey: The key to associate with the value.
      */
     public mutating func set<Value>(value: Value, forKey key: Key) {
+        lock.lock()
         cache.set(value: value, forKey: key)
+        lock.unlock()
     }
 
     /**
@@ -197,7 +204,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
         - key: The key to remove the value for.
      */
     public mutating func remove(_ key: Key) {
+        lock.lock()
         cache.remove(key)
+        lock.unlock()
     }
 
     /**
@@ -208,7 +217,8 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
      - Returns: `true` if the object contains the key, otherwise `false`.
      */
     public func contains(_ key: Key) -> Bool {
-        cache.contains(key)
+        lock.lock(); defer { lock.unlock() }
+        return cache.contains(key)
     }
 
     /**
@@ -221,6 +231,7 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
      */
     @discardableResult
     public func require(keys: Set<Key>) throws -> Self {
+        lock.lock(); defer { lock.unlock() }
         try cache.require(keys: keys)
 
         return self
@@ -236,6 +247,7 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
      */
     @discardableResult
     public func require(_ key: Key) throws -> Self {
+        lock.lock(); defer { lock.unlock() }
         try cache.require(key)
 
         return self
@@ -251,6 +263,7 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable where Key.RawVal
     public func values<Value>(
         ofType type: Value.Type = Value.self
     ) -> [Key: Value] {
-        cache.values(ofType: type)
+        lock.lock(); defer { lock.unlock() }
+        return cache.values(ofType: type)
     }
 }

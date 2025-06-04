@@ -13,7 +13,7 @@ import Foundation
  let age = cache.get("age") // age is now 100
  ```
  */
-open class Cache<Key: Hashable, Value>: Cacheable {
+open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
 
     /// Lock to synchronize the access to the cache dictionary.
     fileprivate var lock: NSLock

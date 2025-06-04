@@ -1,7 +1,7 @@
 import Foundation
 
 /// `Error` that reports the required keys
-public struct MissingRequiredKeysError<Key: Hashable>: LocalizedError {
+public struct MissingRequiredKeysError<Key: Hashable>: LocalizedError, @unchecked Sendable {
     /// Required keys
     public let keys: Set<Key>
 
