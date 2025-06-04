@@ -4,7 +4,7 @@ public class AnyCacheable: Cacheable, @unchecked Sendable {
     public typealias Key = AnyHashable
     public typealias Value = Any
 
-    private let lock = NSLock()
+    private let lock = NSRecursiveLock()
     private var cache: any Cacheable
 
     private var cacheGet: ((AnyHashable) -> Any?)!

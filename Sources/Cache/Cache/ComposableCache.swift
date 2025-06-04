@@ -1,7 +1,7 @@
 #if !os(Windows)
 import Foundation
 public struct ComposableCache<Key: Hashable>: Cacheable, @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = NSRecursiveLock()
     private let caches: [AnyCacheable]
 
     public init(caches: [any Cacheable]) {

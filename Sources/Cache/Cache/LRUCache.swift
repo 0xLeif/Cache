@@ -12,7 +12,7 @@ Error Handling: The set(value:forKey:) function does not throw any error. Instea
 The `LRUCache` class is a subclass of the `Cache` class. You can use its `capacity` property to specify the maximum number of key-value pairs that the cache can hold.
 */
 public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Sendable {
-    private let lock = NSLock()
+    private let lock = NSRecursiveLock()
     private var keys: [Key]
 
     /// The maximum capacity of the cache.
