@@ -17,7 +17,7 @@ final class ThreadSafetyTests: XCTestCase {
 
     func testLRUCacheConcurrentAccess() {
         let iterations = 500
-        let cache = LRUCache<Int, Int>(capacity: UInt(iterations))
+        let cache = LRUCache<Int, Int>(capacity: 5)
 
         DispatchQueue.concurrentPerform(iterations: iterations) { i in
             cache.set(value: i, forKey: i)
@@ -29,7 +29,7 @@ final class ThreadSafetyTests: XCTestCase {
 
     func testExpiringCacheConcurrentAccess() {
         let iterations = 200
-        let cache = ExpiringCache<Int, Int>(duration: .hours(1))
+        let cache = ExpiringCache<Int, Int>(duration: .seconds(1))
 
         DispatchQueue.concurrentPerform(iterations: iterations) { i in
             cache.set(value: i, forKey: i)
