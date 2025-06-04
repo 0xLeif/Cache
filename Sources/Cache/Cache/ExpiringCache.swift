@@ -9,9 +9,9 @@ import Foundation
 
  Objects stored in the cache are automatically removed when their expiration duration has passed.
  */
-public class ExpiringCache<Key: Hashable, Value>: Cacheable {
+public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
     /// `Error` that reports expired values
-    public struct ExpiriedValueError: LocalizedError {
+    public struct ExpiriedValueError: LocalizedError, @unchecked Sendable {
         /// Expired key
         public let key: Key
 
@@ -71,7 +71,7 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable {
         }
     }
 
-    private struct ExpiringValue {
+    private struct ExpiringValue: @unchecked Sendable {
         let expriation: Date
         let value: Value
     }

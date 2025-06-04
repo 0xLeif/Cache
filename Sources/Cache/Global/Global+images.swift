@@ -11,6 +11,6 @@ extension Global {
     #endif
 
     /// The global cache for storing images.
-    public static var images: Cache<URL, CacheImage> = Cache()
+    public static let images: Cache<URL, CacheImage> = Cache()
 }
 #endif

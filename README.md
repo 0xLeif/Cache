@@ -2,6 +2,8 @@
 
 *A simple, lightweight caching library for Swift.*
 
+Requires **Swift 6.0** or later.
+
 ## What is Cache?
 
 Cache is a Swift library for caching arbitrary data types in memory. It provides a simple and intuitive API for storing, retrieving, and removing objects from the cache.

@@ -42,7 +42,7 @@ import Foundation
  */
 public class PersistableCache<
     Key: RawRepresentable & Hashable, Value, PersistedValue
->: Cache<Key, Value> where Key.RawValue == String {
+>: Cache<Key, Value>, @unchecked Sendable where Key.RawValue == String {
     private let lock: NSLock = NSLock()
 
     /// The name of the cache. This will be used as the filename when saving to disk.

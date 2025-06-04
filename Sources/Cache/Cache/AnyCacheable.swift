@@ -1,8 +1,10 @@
 #if !os(Windows)
-public class AnyCacheable: Cacheable {
+import Foundation
+public class AnyCacheable: Cacheable, @unchecked Sendable {
     public typealias Key = AnyHashable
     public typealias Value = Any
 
+    private let lock = NSLock()
     private var cache: any Cacheable
 
     private var cacheGet: ((AnyHashable) -> Any?)!
@@ -93,6 +95,7 @@ public class AnyCacheable: Cacheable {
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) -> Output? {
+        lock.lock(); defer { lock.unlock() }
         guard let value = cacheGet(key) else {
             return nil
         }
@@ -108,6 +111,7 @@ public class AnyCacheable: Cacheable {
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) throws -> Output {
+        lock.lock(); defer { lock.unlock() }
         let resolvedValue = try cacheResolve(key)
 
         guard let output = resolvedValue as? Output else {
@@ -121,31 +125,37 @@ public class AnyCacheable: Cacheable {
     }
 
     public func set(value: Value, forKey key: AnyHashable) {
+        lock.lock(); defer { lock.unlock() }
         cacheSet(value, key)
     }
 
     public func remove(_ key: AnyHashable) {
+        lock.lock(); defer { lock.unlock() }
         cacheRemove(key)
     }
 
     public func contains(_ key: AnyHashable) -> Bool {
-        cacheContains(key)
+        lock.lock(); defer { lock.unlock() }
+        return cacheContains(key)
     }
 
     public func require(keys: Set<AnyHashable>) throws -> Self {
+        lock.lock(); defer { lock.unlock() }
         try cacheRequireKeys(keys)
 
         return self
     }
 
     public func require(_ key: AnyHashable) throws -> Self {
+        lock.lock(); defer { lock.unlock() }
         try cacheRequireKey(key)
 
         return self
     }
 
     public func values<Output>(ofType: Output.Type) -> [AnyHashable: Output] {
-        cacheValues().compactMapValues { value in
+        lock.lock(); defer { lock.unlock() }
+        return cacheValues().compactMapValues { value in
             value as? Output
         }
     }
