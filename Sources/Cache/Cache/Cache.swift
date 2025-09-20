@@ -16,7 +16,8 @@ import Foundation
 open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
 
     /// Lock to synchronize the access to the cache dictionary.
-    fileprivate var lock: NSLock
+    /// Using NSRecursiveLock to prevent deadlocks with @Published property wrapper
+    fileprivate var lock: NSRecursiveLock
 
     #if os(Linux) || os(Windows)
     fileprivate var cache: [Key: Value] = [:]
@@ -31,7 +32,7 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Parameter initialValues: An optional dictionary of initial key-value pairs.
      */
     required public init(initialValues: [Key: Value] = [:]) {
-        lock = NSLock()
+        lock = NSRecursiveLock()
         cache = initialValues
     }
 
