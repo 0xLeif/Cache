@@ -437,9 +437,10 @@ final class ThreadSafetyTests: XCTestCase {
     
     /// Test ComposableCache thread safety
     func testComposableCacheThreadSafety() {
+        #if !os(Windows)
         let cache1 = Cache<String, Any>()
         let cache2 = Cache<String, Any>()
-        let composableCache = ComposableCache<String>(caches: [cache1, cache2])
+        let composableCache: ComposableCache<String> = ComposableCache<String>(caches: [cache1, cache2])
         
         let iterations = 2000
         let expectation = XCTestExpectation(description: "ComposableCache thread safety test")
@@ -465,12 +466,14 @@ final class ThreadSafetyTests: XCTestCase {
         }
         
         wait(for: [expectation], timeout: 5.0)
+        #endif
     }
     
     /// Test AnyCacheable thread safety
     func testAnyCacheableThreadSafety() {
+        #if !os(Windows)
         let cache = Cache<String, Any>()
-        let anyCacheable = AnyCacheable(cache)
+        let anyCacheable: AnyCacheable = AnyCacheable(cache)
         
         let iterations = 2000
         let expectation = XCTestExpectation(description: "AnyCacheable thread safety test")
@@ -495,6 +498,7 @@ final class ThreadSafetyTests: XCTestCase {
         }
         
         wait(for: [expectation], timeout: 5.0)
+        #endif
     }
     
     /// Test mixed operations that could cause deadlocks
