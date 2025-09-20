@@ -404,6 +404,7 @@ final class ThreadSafetyTests: XCTestCase {
     
     /// Test global cache thread safety
     func testGlobalCacheThreadSafety() {
+        let cache = Cache<String, Any>()
         let iterations = 2000
         let expectation = XCTestExpectation(description: "Global cache thread safety test")
         expectation.expectedFulfillmentCount = iterations
@@ -417,15 +418,12 @@ final class ThreadSafetyTests: XCTestCase {
                 // Test global cache set
                 // Note: This would require actual global cache access
                 // For now, we'll test the pattern
-                let cache = Cache<String, Any>()
                 cache.set(value: "global_value_\(i)", forKey: key)
             } else if i % 3 == 1 {
                 // Test global cache get
-                let cache = Cache<String, Any>()
                 let _ = cache.get(key)
             } else {
                 // Test global cache remove
-                let cache = Cache<String, Any>()
                 cache.remove(key)
             }
             
