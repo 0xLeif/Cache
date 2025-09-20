@@ -1,40 +1,57 @@
 name: docc
+
 on:
   push:
     branches: [ "main" ]
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: pages
   cancel-in-progress: true
+
 jobs:
   pages:
     environment:
       name: github-pages
       url: '${{ steps.deployment.outputs.page_url }}'
     runs-on: macos-latest
+
     steps:
-      - uses: swift-actions/setup-swift@v1
-      - name: git checkout
+      - name: Checkout code
         uses: actions/checkout@v3
-      - name: docbuild
-        run: >
-          sudo xcode-select -s /Applications/Xcode_16.0.app;
-          xcodebuild docbuild -scheme Cache \
-            -derivedDataPath /tmp/docbuild \
-            -destination 'generic/platform=iOS';
-          $(xcrun --find docc) process-archive \
-            transform-for-static-hosting /tmp/docbuild/Build/Products/Debug-iphoneos/Cache.doccarchive \
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 16.0
+
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v2
+        with:
+          swift-version: '6.1.0'
+
+      - name: Build and Export DocC
+        run: |
+          swift package --allow-writing-to-directory docs \
+            generate-documentation --target Cache \
             --output-path docs \
-            --hosting-base-path 'Cache';
-          echo "<script>window.location.href +=
-          \"/documentation/cache\"</script>" > docs/index.html;
-      - name: artifacts
-        uses: actions/upload-pages-artifact@v1
+            --transform-for-static-hosting \
+            --hosting-base-path Cache
+
+          echo '<script>window.location.href += "/documentation/cache"</script>' > docs/index.html
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
           path: docs
-      - name: deploy
+
+      - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
