@@ -16,7 +16,7 @@ import Foundation
 open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
 
     /// Lock to synchronize the access to the cache dictionary.
-    /// Using NSRecursiveLock to prevent deadlocks with @Published property wrapper
+    /// Using NSRecursiveLock to prevent re-entrant lock deadlocks with @Published property wrapper
     fileprivate var lock: NSRecursiveLock
 
     #if os(Linux) || os(Windows)
