@@ -11,7 +11,7 @@ import Foundation
  */
 public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
     /// `Error` that reports expired values
-    public struct ExpiriedValueError: LocalizedError, @unchecked Sendable {
+    public struct ExpiredValueError: LocalizedError, @unchecked Sendable {
         /// Expired key
         public let key: Key
 
@@ -72,7 +72,7 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
     }
 
     private struct ExpiringValue: @unchecked Sendable {
-        let expriation: Date
+        let expiration: Date
         let value: Value
     }
 
@@ -101,7 +101,7 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
         self.cache = Cache(
             initialValues: initialValues.mapValues { value in
                 ExpiringValue(
-                    expriation: Date().addingTimeInterval(duration.timeInterval),
+                    expiration: Date().addingTimeInterval(duration.timeInterval),
                     value: value
                 )
             }
@@ -167,9 +167,9 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
         if isExpired(value: expiringValue) {
             remove(key)
 
-            throw ExpiriedValueError(
+            throw ExpiredValueError(
                 key: key,
-                expiration: expiringValue.expriation
+                expiration: expiringValue.expiration
             )
         }
 
@@ -205,7 +205,7 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
     public func set(value: Value, forKey key: Key) {
         cache.set(
             value: ExpiringValue(
-                expriation: Date().addingTimeInterval(duration.timeInterval),
+                expiration: Date().addingTimeInterval(duration.timeInterval),
                 value: value
             ),
             forKey: key
@@ -301,6 +301,6 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
     // MARK: - Private Helpers
 
     private func isExpired(value: ExpiringValue) -> Bool {
-        value.expriation <= Date()
+        value.expiration <= Date()
     }
 }
