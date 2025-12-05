@@ -151,11 +151,12 @@ public class PersistableCache<
      */
     public func save() throws {
         lock.lock()
+        defer { lock.unlock() }
+
         let persistedValues = allValues.compactMapValues(persistedValueMap)
         let json = JSON<Key>(initialValues: persistedValues)
         let data = try json.data()
         try data.write(to: url.fileURL(withName: name))
-        lock.unlock()
     }
 
     /**
@@ -165,8 +166,9 @@ public class PersistableCache<
      */
     public func delete() throws {
         lock.lock()
+        defer { lock.unlock() }
+
         try FileManager.default.removeItem(at: url.fileURL(withName: name))
-        lock.unlock()
     }
 }
 
