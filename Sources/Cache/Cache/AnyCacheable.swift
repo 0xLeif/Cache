@@ -115,7 +115,7 @@ public class AnyCacheable: Cacheable, @unchecked Sendable {
             guard let output = resolvedValue as? Output else {
                 throw InvalidTypeError(
                     expectedType: Output.self,
-                    actualType: type(of: cacheGet(key))
+                    actualType: Value.self
                 )
             }
             return output
