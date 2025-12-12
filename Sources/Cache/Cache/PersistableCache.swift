@@ -43,7 +43,7 @@ import Foundation
 public class PersistableCache<
     Key: RawRepresentable & Hashable, Value, PersistedValue
 >: Cache<Key, Value>, @unchecked Sendable where Key.RawValue == String {
-    private let lock: NSLock = NSLock()
+    private let persistLock = CacheLock()
 
     /// The name of the cache. This will be used as the filename when saving to disk.
     public let name: String
@@ -150,13 +150,12 @@ public class PersistableCache<
         - An error if the `data.write(to:)` call fails to write the JSON data to disk.
      */
     public func save() throws {
-        lock.lock()
-        defer { lock.unlock() }
-
-        let persistedValues = allValues.compactMapValues(persistedValueMap)
-        let json = JSON<Key>(initialValues: persistedValues)
-        let data = try json.data()
-        try data.write(to: url.fileURL(withName: name))
+        try persistLock.withLock {
+            let persistedValues = allValues.compactMapValues(persistedValueMap)
+            let json = JSON<Key>(initialValues: persistedValues)
+            let data = try json.data()
+            try data.write(to: url.fileURL(withName: name))
+        }
     }
 
     /**
@@ -165,10 +164,9 @@ public class PersistableCache<
      - Throws: An error if the file manager fails to remove the cache file.
      */
     public func delete() throws {
-        lock.lock()
-        defer { lock.unlock() }
-
-        try FileManager.default.removeItem(at: url.fileURL(withName: name))
+        try persistLock.withLock {
+            try FileManager.default.removeItem(at: url.fileURL(withName: name))
+        }
     }
 }
 

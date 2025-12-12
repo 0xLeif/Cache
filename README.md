@@ -2,7 +2,19 @@
 
 *A simple, lightweight caching library for Swift.*
 
-Requires **Swift 6.0** or later.
+Requires **Swift 6.2** or later.
+
+### Platform Requirements
+
+| Platform | Minimum Version |
+|----------|-----------------|
+| macOS    | 15.0+           |
+| iOS      | 18.0+           |
+| watchOS  | 11.0+           |
+| tvOS     | 18.0+           |
+| visionOS | 2.0+            |
+
+> **Note:** For older platform support (macOS 10.15+, iOS 13+, etc.), use version 2.x.x.
 
 ## What is Cache?
 
@@ -13,7 +25,7 @@ Cache is a Swift library for caching arbitrary data types in memory. It provides
 - Generic value type
 - Supports JSON serialization and deserialization
 - Flexible caching, allowing for multiple Cache objects with different configurations
-- Thread-safe implementation
+- Thread-safe implementation using Swift's `Mutex` from the Synchronization framework
 - Property Wrappers
 
 ## Installation
@@ -21,6 +33,14 @@ Cache is a Swift library for caching arbitrary data types in memory. It provides
 ### Swift Package Manager (SPM)
 
 Add the following line to your `Package.swift` file in the dependencies array:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/0xLeif/Cache.git", from: "3.0.0")
+]
+```
+
+For older platforms, use version 2.x:
 
 ```swift
 dependencies: [

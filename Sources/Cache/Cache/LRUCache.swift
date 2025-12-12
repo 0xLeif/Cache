@@ -12,7 +12,6 @@ Error Handling: The set(value:forKey:) function does not throw any error. Instea
 The `LRUCache` class is a subclass of the `Cache` class. You can use its `capacity` property to specify the maximum number of key-value pairs that the cache can hold.
 */
 public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Sendable {
-    private let lock = NSRecursiveLock()
     private var keys: [Key]
 
     /// The maximum capacity of the cache.
@@ -47,42 +46,40 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
     }
 
     public override func get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
-        lock.lock(); defer { lock.unlock() }
-        guard let value = super.get(key, as: Output.self) else {
-            return nil
+        lock.withLock {
+            guard let value = _get(key, as: Output.self) else {
+                return nil
+            }
+            updateKeys(recentlyUsed: key)
+            return value
         }
-
-        updateKeys(recentlyUsed: key)
-
-        return value
     }
 
     public override func set(value: Value, forKey key: Key) {
-        lock.lock(); defer { lock.unlock() }
-        super.set(value: value, forKey: key)
-
-        updateKeys(recentlyUsed: key)
-        checkCapacity()
+        lock.withLock {
+            _set(value: value, forKey: key)
+            updateKeys(recentlyUsed: key)
+            checkCapacity()
+        }
     }
 
     public override func remove(_ key: Key) {
-        lock.lock(); defer { lock.unlock() }
-        super.remove(key)
-
-        if let index = keys.firstIndex(of: key) {
-            keys.remove(at: index)
+        lock.withLock {
+            _remove(key)
+            if let index = keys.firstIndex(of: key) {
+                keys.remove(at: index)
+            }
         }
     }
 
     public override func contains(_ key: Key) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        guard super.contains(key) else {
-            return false
+        lock.withLock {
+            guard _contains(key) else {
+                return false
+            }
+            updateKeys(recentlyUsed: key)
+            return true
         }
-
-        updateKeys(recentlyUsed: key)
-
-        return true
     }
 
     // MARK: - Private Helpers
@@ -93,7 +90,8 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
             let keyToRemove = keys.first
         else { return }
 
-        remove(keyToRemove)
+        _remove(keyToRemove)
+        keys.removeFirst()
     }
 
     private func updateKeys(recentlyUsed: Key) {

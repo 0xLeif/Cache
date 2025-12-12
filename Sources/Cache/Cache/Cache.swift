@@ -16,8 +16,8 @@ import Foundation
 open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
 
     /// Lock to synchronize the access to the cache dictionary.
-    /// Using NSRecursiveLock to prevent re-entrant lock deadlocks with @Published property wrapper
-    fileprivate var lock: NSRecursiveLock
+    /// Uses Mutex on platforms that support it (macOS 15+, iOS 18+), NSRecursiveLock on older platforms.
+    let lock: CacheLock
 
     #if os(Linux) || os(Windows)
     fileprivate var cache: [Key: Value] = [:]
@@ -32,7 +32,7 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Parameter initialValues: An optional dictionary of initial key-value pairs.
      */
     required public init(initialValues: [Key: Value] = [:]) {
-        lock = NSRecursiveLock()
+        lock = CacheLock()
         cache = initialValues
     }
 
@@ -45,10 +45,9 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Returns: The value stored in cache for the given key, or `nil` if it doesn't exist.
      */
     open func get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
-        lock.lock()
-        defer { lock.unlock() }
-
-        return cache.get(key, as: Output.self)
+        lock.withLock {
+            cache.get(key, as: Output.self)
+        }
     }
 
     /**
@@ -83,9 +82,9 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
         - key: The key the value should be stored under.
      */
     open func set(value: Value, forKey key: Key) {
-        lock.lock()
-        cache.set(value: value, forKey: key)
-        lock.unlock()
+        lock.withLock {
+            cache.set(value: value, forKey: key)
+        }
     }
 
     /**
@@ -95,9 +94,9 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
         - key: The key to remove the value for.
      */
     open func remove(_ key: Key) {
-        lock.lock()
-        cache.remove(key)
-        lock.unlock()
+        lock.withLock {
+            cache.remove(key)
+        }
     }
 
     /**
@@ -108,9 +107,9 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Returns: `true` if the key is present in the cache, `false` otherwise.
      */
     open func contains(_ key: Key) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-
-        return cache.contains(key)
+        lock.withLock {
+            cache.contains(key)
+        }
     }
 
     /**
@@ -154,9 +153,9 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
     open func values<Output>(
         ofType: Output.Type = Output.self
     ) -> [Key: Output] {
-        lock.lock(); defer { lock.unlock() }
-
-        return cache.values(ofType: Output.self)
+        lock.withLock {
+            cache.values(ofType: Output.self)
+        }
     }
 }
 
@@ -186,5 +185,29 @@ extension Cache {
      */
     public func resolve(_ key: Key) throws -> Value {
         try resolve(key, as: Value.self)
+    }
+}
+
+// MARK: - Internal Unlocked Methods for Subclass Use
+
+extension Cache {
+    /// Internal unlocked get - caller must hold the lock.
+    func _get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
+        cache.get(key, as: Output.self)
+    }
+
+    /// Internal unlocked set - caller must hold the lock.
+    func _set(value: Value, forKey key: Key) {
+        cache.set(value: value, forKey: key)
+    }
+
+    /// Internal unlocked remove - caller must hold the lock.
+    func _remove(_ key: Key) {
+        cache.remove(key)
+    }
+
+    /// Internal unlocked contains - caller must hold the lock.
+    func _contains(_ key: Key) -> Bool {
+        cache.contains(key)
     }
 }

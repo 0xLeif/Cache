@@ -1,18 +1,17 @@
-import Foundation
 ///  The `RequiredKeysCache` class is a subclass of `Cache` that allows you to define a set of required keys. This cache ensures that the required keys are always present and throws an error if any of them are missing.
 public class RequiredKeysCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Sendable {
-    private let keysLock = NSLock()
+    private let keysLock = CacheLock()
     private var _requiredKeys: Set<Key> = []
 
     /// The set of keys that must always be present in the cache.
     public var requiredKeys: Set<Key> {
-        get { keysLock.lock(); defer { keysLock.unlock() }; return _requiredKeys }
+        get { keysLock.withLock { _requiredKeys } }
         set {
-            keysLock.lock()
-            _requiredKeys = newValue
-            keysLock.unlock()
-            for key in newValue {
-                _ = resolve(requiredKey: key)
+            keysLock.withLock {
+                _requiredKeys = newValue
+                for key in newValue {
+                    _validateRequiredKey(key)
+                }
             }
         }
     }
@@ -56,7 +55,7 @@ public class RequiredKeysCache<Key: Hashable, Value>: Cache<Key, Value>, @unchec
        - key: The key of the value to remove.
    */
     public override func remove(_ key: Key) {
-        keysLock.lock(); let isRequired = _requiredKeys.contains(key); keysLock.unlock()
+        let isRequired = keysLock.withLock { _requiredKeys.contains(key) }
         guard isRequired == false else { return }
 
         super.remove(key)
@@ -73,15 +72,21 @@ public class RequiredKeysCache<Key: Hashable, Value>: Cache<Key, Value>, @unchec
     - Throws: A runtime error if the required key is not present in the cache or if the expected value type is incorrect.
     */
     public func resolve<Output>(requiredKey: Key, as: Output.Type = Output.self) -> Output {
-        keysLock.lock(); let isRequired = _requiredKeys.contains(requiredKey); keysLock.unlock()
+        let isRequired = keysLock.withLock { _requiredKeys.contains(requiredKey) }
         precondition(isRequired, "The key '\(requiredKey)' is not a Required Key.")
         precondition(contains(requiredKey), "Required Key Missing: '\(requiredKey)'")
-        
+
         do {
             return try resolve(requiredKey, as: Output.self)
         }
 
         catch { fatalError(error.localizedDescription) }
+    }
+
+    /// Internal validation that assumes keysLock is already held by caller.
+    private func _validateRequiredKey(_ key: Key) {
+        precondition(_requiredKeys.contains(key), "The key '\(key)' is not a Required Key.")
+        precondition(contains(key), "Required Key Missing: '\(key)'")
     }
 
     /**

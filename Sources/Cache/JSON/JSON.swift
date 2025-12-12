@@ -1,7 +1,7 @@
 import Foundation
 
 public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Sendable where Key.RawValue == String {
-    private let lock = NSLock()
+    private let lock = CacheLock()
     private var cache: [Key: Any]
 
     /**
@@ -95,29 +95,29 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
         _ key: Key,
         keyed: JSONKey.Type = JSONKey.self
     ) -> JSON<JSONKey>? {
-        lock.lock(); defer { lock.unlock() }
-        let value = cache[key]
-        var jsonDictionary: JSON<JSONKey>?
+        lock.withLock {
+            let value = cache[key]
+            var jsonDictionary: JSON<JSONKey>?
 
-        if let data = value as? Data {
-            jsonDictionary = JSON<JSONKey>(data: data)
-        } else if let dictionary = value as? [String: Any] {
-            jsonDictionary = JSON<JSONKey>(
-                initialValues: dictionary.compactMapKeys { key in
-                    guard let key = JSONKey(rawValue: key) else {
-                        return nil
+            if let data = value as? Data {
+                jsonDictionary = JSON<JSONKey>(data: data)
+            } else if let dictionary = value as? [String: Any] {
+                jsonDictionary = JSON<JSONKey>(
+                    initialValues: dictionary.compactMapKeys { key in
+                        guard let key = JSONKey(rawValue: key) else {
+                            return nil
+                        }
+                        return key
                     }
+                )
+            } else if let dictionary = value as? [JSONKey: Any] {
+                jsonDictionary = JSON<JSONKey>(initialValues: dictionary)
+            } else if let json = value as? JSON<JSONKey> {
+                jsonDictionary = json
+            }
 
-                    return key
-                }
-            )
-        } else if let dictionary = value as? [JSONKey: Any] {
-            jsonDictionary = JSON<JSONKey>(initialValues: dictionary)
-        } else if let json = value as? JSON<JSONKey> {
-            jsonDictionary = json
+            return jsonDictionary
         }
-
-        return jsonDictionary
     }
 
     /**
@@ -132,29 +132,29 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
         _ key: Key,
         keyed: JSONKey.Type = JSONKey.self
     ) -> [JSON<JSONKey>]? {
-        lock.lock(); defer { lock.unlock() }
-        let value = cache[key]
-        var jsonArray: [JSON<JSONKey>]?
+        lock.withLock {
+            let value = cache[key]
+            var jsonArray: [JSON<JSONKey>]?
 
-        if let data = value as? Data {
-            jsonArray = JSON<JSONKey>.array(data: data)
-        } else if let array = value as? [[String: Any]] {
-            jsonArray = array.compactMap { json in
-                guard
-                    let jsonData = try? JSONSerialization.data(withJSONObject: json)
-                else { return nil }
+            if let data = value as? Data {
+                jsonArray = JSON<JSONKey>.array(data: data)
+            } else if let array = value as? [[String: Any]] {
+                jsonArray = array.compactMap { json in
+                    guard let jsonData = try? JSONSerialization.data(withJSONObject: json) else {
+                        return nil
+                    }
+                    return JSON<JSONKey>(data: jsonData)
+                }
+            } else if let array = value as? [[JSONKey: Any]] {
+                jsonArray = array.map { json in
+                    JSON<JSONKey>(initialValues: json)
+                }
+            } else if let json = value as? [JSON<JSONKey>] {
+                jsonArray = json
+            }
 
-                return JSON<JSONKey>(data: jsonData)
-            }
-        } else if let array = value as? [[JSONKey: Any]] {
-            jsonArray = array.map { json in
-                JSON<JSONKey>(initialValues: json)
-            }
-        } else if let json = value as? [JSON<JSONKey>] {
-            jsonArray = json
+            return jsonArray
         }
-
-        return jsonArray
     }
 
     /**
@@ -166,8 +166,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
      - Returns: The value for the given key, or `nil` if the key doesn't exist or the cast fails.
      */
     public func get<Value>(_ key: Key, as: Value.Type = Value.self) -> Value? {
-        lock.lock(); defer { lock.unlock() }
-        return cache.get(key, as: Value.self)
+        lock.withLock {
+            cache.get(key, as: Value.self)
+        }
     }
 
     /**
@@ -180,8 +181,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
      - Throws: A `MissingRequiredKeysError` if the key is missing, or an `InvalidTypeError` if the value couldn't be casted to the specified type.
      */
     public func resolve<Value>(_ key: Key, as: Value.Type = Value.self) throws -> Value {
-        lock.lock(); defer { lock.unlock() }
-        return try cache.resolve(key, as: Value.self)
+        try lock.withLock {
+            try cache.resolve(key, as: Value.self)
+        }
     }
 
     /**
@@ -192,9 +194,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
         - forKey: The key to associate with the value.
      */
     public mutating func set<Value>(value: Value, forKey key: Key) {
-        lock.lock()
-        cache.set(value: value, forKey: key)
-        lock.unlock()
+        lock.withLock {
+            cache.set(value: value, forKey: key)
+        }
     }
 
     /**
@@ -204,9 +206,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
         - key: The key to remove the value for.
      */
     public mutating func remove(_ key: Key) {
-        lock.lock()
-        cache.remove(key)
-        lock.unlock()
+        lock.withLock {
+            cache.remove(key)
+        }
     }
 
     /**
@@ -217,8 +219,9 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
      - Returns: `true` if the object contains the key, otherwise `false`.
      */
     public func contains(_ key: Key) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        return cache.contains(key)
+        lock.withLock {
+            cache.contains(key)
+        }
     }
 
     /**
@@ -231,10 +234,10 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
      */
     @discardableResult
     public func require(keys: Set<Key>) throws -> Self {
-        lock.lock(); defer { lock.unlock() }
-        try cache.require(keys: keys)
-
-        return self
+        try lock.withLock {
+            try cache.require(keys: keys)
+            return self
+        }
     }
 
     /**
@@ -247,10 +250,10 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
      */
     @discardableResult
     public func require(_ key: Key) throws -> Self {
-        lock.lock(); defer { lock.unlock() }
-        try cache.require(key)
-
-        return self
+        try lock.withLock {
+            try cache.require(key)
+            return self
+        }
     }
 
     /**
@@ -263,7 +266,8 @@ public struct JSON<Key: RawRepresentable & Hashable>: Cacheable, @unchecked Send
     public func values<Value>(
         ofType type: Value.Type = Value.self
     ) -> [Key: Value] {
-        lock.lock(); defer { lock.unlock() }
-        return cache.values(ofType: type)
+        lock.withLock {
+            cache.values(ofType: type)
+        }
     }
 }

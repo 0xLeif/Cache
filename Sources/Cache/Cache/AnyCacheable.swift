@@ -4,7 +4,7 @@ public class AnyCacheable: Cacheable, @unchecked Sendable {
     public typealias Key = AnyHashable
     public typealias Value = Any
 
-    private let lock = NSRecursiveLock()
+    private let lock = CacheLock()
     private var cache: any Cacheable
 
     private var cacheGet: ((AnyHashable) -> Any?)!
@@ -95,68 +95,70 @@ public class AnyCacheable: Cacheable, @unchecked Sendable {
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) -> Output? {
-        lock.lock(); defer { lock.unlock() }
-        guard let value = cacheGet(key) else {
-            return nil
+        lock.withLock {
+            guard let value = cacheGet(key) else {
+                return nil
+            }
+            guard let output = value as? Output else {
+                return nil
+            }
+            return output
         }
-
-        guard let output = value as? Output else {
-            return nil
-        }
-
-        return output
     }
 
     public func resolve<Output>(
         _ key: AnyHashable,
         as: Output.Type = Output.self
     ) throws -> Output {
-        lock.lock(); defer { lock.unlock() }
-        let resolvedValue = try cacheResolve(key)
-
-        guard let output = resolvedValue as? Output else {
-            throw InvalidTypeError(
-                expectedType: Output.self,
-                actualType: type(of: get(key, as: Any.self))
-            )
+        try lock.withLock {
+            let resolvedValue = try cacheResolve(key)
+            guard let output = resolvedValue as? Output else {
+                throw InvalidTypeError(
+                    expectedType: Output.self,
+                    actualType: type(of: cacheGet(key))
+                )
+            }
+            return output
         }
-
-        return output
     }
 
     public func set(value: Value, forKey key: AnyHashable) {
-        lock.lock(); defer { lock.unlock() }
-        cacheSet(value, key)
+        lock.withLock {
+            cacheSet(value, key)
+        }
     }
 
     public func remove(_ key: AnyHashable) {
-        lock.lock(); defer { lock.unlock() }
-        cacheRemove(key)
+        lock.withLock {
+            cacheRemove(key)
+        }
     }
 
     public func contains(_ key: AnyHashable) -> Bool {
-        lock.lock(); defer { lock.unlock() }
-        return cacheContains(key)
+        lock.withLock {
+            cacheContains(key)
+        }
     }
 
     public func require(keys: Set<AnyHashable>) throws -> Self {
-        lock.lock(); defer { lock.unlock() }
-        try cacheRequireKeys(keys)
-
-        return self
+        try lock.withLock {
+            try cacheRequireKeys(keys)
+            return self
+        }
     }
 
     public func require(_ key: AnyHashable) throws -> Self {
-        lock.lock(); defer { lock.unlock() }
-        try cacheRequireKey(key)
-
-        return self
+        try lock.withLock {
+            try cacheRequireKey(key)
+            return self
+        }
     }
 
     public func values<Output>(ofType: Output.Type) -> [AnyHashable: Output] {
-        lock.lock(); defer { lock.unlock() }
-        return cacheValues().compactMapValues { value in
-            value as? Output
+        lock.withLock {
+            cacheValues().compactMapValues { value in
+                value as? Output
+            }
         }
     }
 }
