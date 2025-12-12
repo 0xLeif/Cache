@@ -128,17 +128,18 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
      - Returns: the value of the specified key casted to the output type (if possible).
      */
     public func get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
-        guard let expiringValue = cache.get(key, as: ExpiringValue.self) else {
-            return nil
+        cache.lock.withLock {
+            guard let expiringValue = cache.unsafeGet(key, as: ExpiringValue.self) else {
+                return nil
+            }
+
+            if isExpired(value: expiringValue) {
+                cache.unsafeRemove(key)
+                return nil
+            }
+
+            return expiringValue.value as? Output
         }
-
-        if isExpired(value: expiringValue) {
-            cache.remove(key)
-
-            return nil
-        }
-
-        return expiringValue.value as? Output
     }
 
     /**
@@ -162,25 +163,28 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
      - Returns: the value of the specified key casted to the output type.
      */
     public func resolve<Output>(_ key: Key, as: Output.Type = Output.self) throws -> Output {
-        let expiringValue = try cache.resolve(key, as: ExpiringValue.self)
+        try cache.lock.withLock {
+            guard let expiringValue = cache.unsafeGet(key, as: ExpiringValue.self) else {
+                throw MissingRequiredKeysError(keys: [key])
+            }
 
-        if isExpired(value: expiringValue) {
-            remove(key)
+            if isExpired(value: expiringValue) {
+                cache.unsafeRemove(key)
+                throw ExpiredValueError(
+                    key: key,
+                    expiration: expiringValue.expiration
+                )
+            }
 
-            throw ExpiredValueError(
-                key: key,
-                expiration: expiringValue.expiration
-            )
+            guard let value = expiringValue.value as? Output else {
+                throw InvalidTypeError(
+                    expectedType: Output.self,
+                    actualType: Value.self
+                )
+            }
+
+            return value
         }
-
-        guard let value = expiringValue.value as? Output else {
-            throw InvalidTypeError(
-                expectedType: Output.self,
-                actualType: type(of: expiringValue.value)
-            )
-        }
-
-        return value
     }
 
     /**
@@ -228,17 +232,18 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
      - Returns: true if the cache contains the key, false otherwise.
      */
     public func contains(_ key: Key) -> Bool {
-        guard let expiringValue = cache.get(key, as: ExpiringValue.self) else {
-            return false
+        cache.lock.withLock {
+            guard let expiringValue = cache.unsafeGet(key, as: ExpiringValue.self) else {
+                return false
+            }
+
+            if isExpired(value: expiringValue) {
+                cache.unsafeRemove(key)
+                return false
+            }
+
+            return true
         }
-
-        if isExpired(value: expiringValue) {
-            remove(key)
-
-            return false
-        }
-
-        return cache.contains(key)
     }
 
     /**
@@ -249,19 +254,26 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
      - Returns: self (the Cache instance).
      */
     public func require(keys: Set<Key>) throws -> Self {
-        var missingKeys: Set<Key> = []
+        try cache.lock.withLock {
+            var missingKeys: Set<Key> = []
 
-        for key in keys {
-            if contains(key) == false {
-                missingKeys.insert(key)
+            for key in keys {
+                if let expiringValue = cache.unsafeGet(key, as: ExpiringValue.self) {
+                    if isExpired(value: expiringValue) {
+                        cache.unsafeRemove(key)
+                        missingKeys.insert(key)
+                    }
+                } else {
+                    missingKeys.insert(key)
+                }
             }
-        }
 
-        guard missingKeys.isEmpty else {
-            throw MissingRequiredKeysError(keys: missingKeys)
-        }
+            guard missingKeys.isEmpty else {
+                throw MissingRequiredKeysError(keys: missingKeys)
+            }
 
-        return self
+            return self
+        }
     }
 
     /**
@@ -282,20 +294,22 @@ public class ExpiringCache<Key: Hashable, Value>: Cacheable, @unchecked Sendable
      - Returns: a dictionary containing only the key-value pairs where the value is of the specified output type.
      */
     public func values<Output>(ofType: Output.Type) -> [Key: Output] {
-        let values = cache.values(ofType: ExpiringValue.self)
+        cache.lock.withLock {
+            var nonExpiredValues: [Key: Output] = [:]
+            var expiredKeys: [Key] = []
 
-        var nonExpiredValues: [Key: Output] = [:]
-
-        values.forEach { key, expiringValue in
-            if
-                isExpired(value: expiringValue) == false,
-                let output = expiringValue.value as? Output
-            {
-                nonExpiredValues[key] = output
+            cache.unsafeValues(ofType: ExpiringValue.self).forEach { key, expiringValue in
+                if isExpired(value: expiringValue) {
+                    expiredKeys.append(key)
+                } else if let output = expiringValue.value as? Output {
+                    nonExpiredValues[key] = output
+                }
             }
-        }
 
-        return nonExpiredValues
+            expiredKeys.forEach { cache.unsafeRemove($0) }
+
+            return nonExpiredValues
+        }
     }
 
     // MARK: - Private Helpers

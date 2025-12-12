@@ -60,20 +60,24 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Throws: `MissingRequiredKeysError` if the key is missing, or `InvalidTypeError` if the value type is not compatible with the expected type.
      */
     open func resolve<Output>(_ key: Key, as: Output.Type = Output.self) throws -> Output {
-        guard contains(key) else {
-            throw MissingRequiredKeysError(keys: [key])
+        try lock.withLock {
+            guard unsafeContains(key) else {
+                throw MissingRequiredKeysError(keys: [key])
+            }
+
+            guard let rawValue = unsafeGet(key, as: Value.self) else {
+                throw MissingRequiredKeysError(keys: [key])
+            }
+
+            guard let value = rawValue as? Output else {
+                throw InvalidTypeError(
+                    expectedType: Output.self,
+                    actualType: Value.self
+                )
+            }
+
+            return value
         }
-
-        let rawValue = get(key, as: Value.self)
-
-        guard let value = rawValue as? Output else {
-            throw InvalidTypeError(
-                expectedType: Output.self,
-                actualType: Value.self
-            )
-        }
-
-        return value
     }
 
     /**
@@ -123,14 +127,15 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
      - Returns: The Cache instance.
      */
     open func require(keys: Set<Key>) throws -> Self {
-        let missingKeys = keys
-            .filter { contains($0) == false }
+        try lock.withLock {
+            let missingKeys = keys.filter { unsafeContains($0) == false }
 
-        guard missingKeys.isEmpty else {
-            throw MissingRequiredKeysError(keys: missingKeys)
+            guard missingKeys.isEmpty else {
+                throw MissingRequiredKeysError(keys: missingKeys)
+            }
+
+            return self
         }
-
-        return self
     }
 
     /**
@@ -211,5 +216,10 @@ extension Cache {
     /// Internal unlocked contains - caller must hold the lock.
     func unsafeContains(_ key: Key) -> Bool {
         cache.contains(key)
+    }
+
+    /// Internal unlocked values - caller must hold the lock.
+    func unsafeValues<Output>(ofType: Output.Type = Output.self) -> [Key: Output] {
+        cache.values(ofType: Output.self)
     }
 }

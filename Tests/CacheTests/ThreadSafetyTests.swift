@@ -581,5 +581,120 @@ final class ThreadSafetyTests: XCTestCase {
         
         wait(for: [expectation], timeout: 1.0)
     }
-    
+
+    // MARK: - Atomic Operation Tests
+
+    func testAtomicResolve() {
+        let cache = Cache<String, Int>()
+        let iterations = 500
+        let expectation = XCTestExpectation(description: "Atomic resolve test")
+        expectation.expectedFulfillmentCount = iterations
+
+        // Set up some initial values
+        for i in 0..<10 {
+            cache.set(value: i * 10, forKey: "key\(i)")
+        }
+
+        DispatchQueue.concurrentPerform(iterations: iterations) { i in
+            let key = "key\(i % 10)"
+            do {
+                let value: Int = try cache.resolve(key)
+                XCTAssertEqual(value, (i % 10) * 10)
+            } catch {
+                XCTFail("Resolve should not fail for existing key: \(error)")
+            }
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+    }
+
+    func testAtomicRequireKeys() {
+        let cache = Cache<String, Int>()
+        let iterations = 200
+        let expectation = XCTestExpectation(description: "Atomic require keys test")
+        expectation.expectedFulfillmentCount = iterations
+
+        // Set up initial values
+        for i in 0..<5 {
+            cache.set(value: i, forKey: "key\(i)")
+        }
+
+        let requiredKeys: Set<String> = ["key0", "key1", "key2"]
+
+        DispatchQueue.concurrentPerform(iterations: iterations) { _ in
+            do {
+                _ = try cache.require(keys: requiredKeys)
+            } catch {
+                XCTFail("Require should not fail: \(error)")
+            }
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+    }
+
+    func testExpiringCacheAtomicOperations() {
+        let cache = ExpiringCache<Int, String>(duration: .seconds(10))
+        let iterations = 300
+        let expectation = XCTestExpectation(description: "ExpiringCache atomic test")
+        expectation.expectedFulfillmentCount = iterations
+
+        // Set up initial values
+        for i in 0..<50 {
+            cache.set(value: "value\(i)", forKey: i)
+        }
+
+        DispatchQueue.concurrentPerform(iterations: iterations) { i in
+            let key = i % 50
+
+            // Mix of operations
+            switch i % 4 {
+            case 0:
+                _ = cache.get(key)
+            case 1:
+                _ = cache.contains(key)
+            case 2:
+                _ = try? cache.resolve(key, as: String.self)
+            default:
+                _ = cache.values(ofType: String.self)
+            }
+
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+    }
+
+    func testConcurrentResolveAndModify() {
+        let cache = Cache<Int, Int>()
+        let iterations = 500
+        let expectation = XCTestExpectation(description: "Concurrent resolve and modify")
+        expectation.expectedFulfillmentCount = iterations
+
+        // Set up initial values
+        for i in 0..<100 {
+            cache.set(value: i, forKey: i)
+        }
+
+        DispatchQueue.concurrentPerform(iterations: iterations) { i in
+            let key = i % 100
+
+            if i % 3 == 0 {
+                // Resolve
+                _ = try? cache.resolve(key, as: Int.self)
+            } else if i % 3 == 1 {
+                // Modify
+                cache.set(value: i, forKey: key)
+            } else {
+                // Check contains
+                _ = cache.contains(key)
+            }
+
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 5.0)
+    }
+
 }
