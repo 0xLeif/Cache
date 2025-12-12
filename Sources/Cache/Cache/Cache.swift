@@ -16,7 +16,7 @@ import Foundation
 open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
 
     /// Lock to synchronize the access to the cache dictionary.
-    /// Uses Mutex on platforms that support it (macOS 15+, iOS 18+), NSRecursiveLock on older platforms.
+    /// Uses Mutex from the Synchronization framework (requires macOS 15+, iOS 18+).
     let lock: CacheLock
 
     #if os(Linux) || os(Windows)
@@ -64,10 +64,12 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
             throw MissingRequiredKeysError(keys: [key])
         }
 
-        guard let value: Output = get(key) else {
+        let rawValue = get(key, as: Value.self)
+
+        guard let value = rawValue as? Output else {
             throw InvalidTypeError(
                 expectedType: Output.self,
-                actualType: type(of: get(key))
+                actualType: Value.self
             )
         }
 
