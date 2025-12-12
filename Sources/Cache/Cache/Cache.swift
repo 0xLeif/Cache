@@ -192,22 +192,22 @@ extension Cache {
 
 extension Cache {
     /// Internal unlocked get - caller must hold the lock.
-    func _get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
+    func unsafeGet<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
         cache.get(key, as: Output.self)
     }
 
     /// Internal unlocked set - caller must hold the lock.
-    func _set(value: Value, forKey key: Key) {
+    func unsafeSet(value: Value, forKey key: Key) {
         cache.set(value: value, forKey: key)
     }
 
     /// Internal unlocked remove - caller must hold the lock.
-    func _remove(_ key: Key) {
+    func unsafeRemove(_ key: Key) {
         cache.remove(key)
     }
 
     /// Internal unlocked contains - caller must hold the lock.
-    func _contains(_ key: Key) -> Bool {
+    func unsafeContains(_ key: Key) -> Bool {
         cache.contains(key)
     }
 }

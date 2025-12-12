@@ -47,7 +47,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
 
     public override func get<Output>(_ key: Key, as: Output.Type = Output.self) -> Output? {
         lock.withLock {
-            guard let value = _get(key, as: Output.self) else {
+            guard let value = unsafeGet(key, as: Output.self) else {
                 return nil
             }
             updateKeys(recentlyUsed: key)
@@ -57,7 +57,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
 
     public override func set(value: Value, forKey key: Key) {
         lock.withLock {
-            _set(value: value, forKey: key)
+            unsafeSet(value: value, forKey: key)
             updateKeys(recentlyUsed: key)
             checkCapacity()
         }
@@ -65,7 +65,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
 
     public override func remove(_ key: Key) {
         lock.withLock {
-            _remove(key)
+            unsafeRemove(key)
             if let index = keys.firstIndex(of: key) {
                 keys.remove(at: index)
             }
@@ -74,7 +74,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
 
     public override func contains(_ key: Key) -> Bool {
         lock.withLock {
-            guard _contains(key) else {
+            guard unsafeContains(key) else {
                 return false
             }
             updateKeys(recentlyUsed: key)
@@ -90,7 +90,7 @@ public class LRUCache<Key: Hashable, Value>: Cache<Key, Value>, @unchecked Senda
             let keyToRemove = keys.first
         else { return }
 
-        _remove(keyToRemove)
+        unsafeRemove(keyToRemove)
         keys.removeFirst()
     }
 
