@@ -287,4 +287,36 @@ final class CacheTests: XCTestCase {
 
         XCTAssertEqual(cache[.text, default: "missing value"], "missing value")
     }
+
+    // MARK: - Issue #151 — collection-typed values through an `Any` cache
+
+    private struct Point: Equatable {
+        let x: Int
+        let y: Int
+    }
+
+    func testArrayOfStructsRoundTripThroughAnyCache() {
+        let cache: Cache<String, Any> = Cache()
+        let points = [Point(x: 1, y: 2), Point(x: 3, y: 4)]
+        cache.set(value: points, forKey: "points")
+
+        let resolved: [Point]? = cache.get("points", as: [Point].self)
+        XCTAssertEqual(resolved, points)
+    }
+
+    func testArrayOfStringsRoundTripThroughAnyCache() {
+        let cache: Cache<String, Any> = Cache()
+        cache.set(value: ["a", "b", "c"], forKey: "letters")
+
+        XCTAssertEqual(cache.get("letters", as: [String].self), ["a", "b", "c"])
+    }
+
+    func testArrayResolveRoundTripThroughAnyCache() throws {
+        let cache: Cache<String, Any> = Cache()
+        let values = [10, 20, 30]
+        cache.set(value: values, forKey: "values")
+
+        let resolved: [Int] = try cache.resolve("values", as: [Int].self)
+        XCTAssertEqual(resolved, values)
+    }
 }
