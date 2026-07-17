@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(Combine)
+import Combine
+#endif
+
 /**
  `Cache` class provides a cache functionality that can be used to store key-value pairs. It is thread-safe using a locking mechanism.
 

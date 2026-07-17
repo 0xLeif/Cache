@@ -15,6 +15,7 @@ Cache is a Swift library for caching arbitrary data types in memory. It provides
 - Flexible caching, allowing for multiple Cache objects with different configurations
 - Thread-safe implementation
 - Property Wrappers
+- Cross-platform: Apple platforms, Linux, Windows, and WebAssembly (WASI)
 
 ## Installation
 
@@ -24,7 +25,7 @@ Add the following line to your `Package.swift` file in the dependencies array:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/0xLeif/Cache.git", from: "2.0.0")
+    .package(url: "https://github.com/0xLeif/Cache.git", from: "2.1.3")
 ]
 ```
 
