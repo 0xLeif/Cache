@@ -19,11 +19,14 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
     /// Using NSRecursiveLock to prevent re-entrant lock deadlocks with @Published property wrapper
     fileprivate var lock: NSRecursiveLock
 
-    #if os(Linux) || os(Windows)
-    fileprivate var cache: [Key: Value] = [:]
-    #else
+    #if canImport(Combine)
     /// The actual cache dictionary of key-value pairs.
     @Published fileprivate var cache: [Key: Value] = [:]
+    #else
+    // Combine (and therefore `@Published`) is unavailable on Linux, Windows, and
+    // WebAssembly (`os(WASI)`). Guarding on `canImport(Combine)` — rather than
+    // `!os(Linux) && !os(Windows)` — correctly excludes wasm too.
+    fileprivate var cache: [Key: Value] = [:]
     #endif
 
     /**
@@ -160,7 +163,7 @@ open class Cache<Key: Hashable, Value>: Cacheable, @unchecked Sendable {
     }
 }
 
-#if !os(Linux) && !os(Windows)
+#if canImport(Combine)
 extension Cache: ObservableObject { }
 #endif
 

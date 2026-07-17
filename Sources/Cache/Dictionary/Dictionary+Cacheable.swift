@@ -15,7 +15,13 @@ extension Dictionary: Cacheable {
     - Returns: The casted value for the given key, or `nil` if the key doesn't exist or the cast fails.
     */
     public func get<Item>(_ key: Key, as: Item.Type = Item.self) -> Item? {
-        guard let value = self[key] as? Item else {
+        // Route through an explicit `Any` boxing step before the conditional cast. This avoids
+        // `swift_dynamicCastFailure` / `_arrayForceCast` aborts on Linux and WASI when casting an
+        // `Optional<Any>` that wraps a collection type (e.g. `[SomeStruct]`): without the
+        // intermediate cast, the runtime takes the `Optional<Any>` → `[T]` forced-array-cast path,
+        // which is not implemented the same way off Darwin. Boxing to `Any` first normalises the
+        // dynamic type to the concrete `Item` path.
+        guard let value = (self[key] as Any) as? Item else {
             return nil
         }
 
